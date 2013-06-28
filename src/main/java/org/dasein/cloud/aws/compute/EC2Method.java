@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2009-2012 enStratus Networks Inc
+ * Copyright (C) 2009-2013 Enstratius, Inc.
  *
  * ====================================================================
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,27 +18,7 @@
 
 package org.dasein.cloud.aws.compute;
 
-import java.io.BufferedReader;
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.UnsupportedEncodingException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-
-import javax.annotation.Nonnull;
-import javax.servlet.http.HttpServletResponse;
-import javax.xml.parsers.ParserConfigurationException;
-
-import org.apache.http.Header;
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpHost;
-import org.apache.http.HttpResponse;
-import org.apache.http.HttpVersion;
-import org.apache.http.NameValuePair;
+import org.apache.http.*;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpPost;
@@ -57,23 +37,26 @@ import org.dasein.cloud.InternalException;
 import org.dasein.cloud.ProviderContext;
 import org.dasein.cloud.admin.PrepaymentSupport;
 import org.dasein.cloud.aws.AWSCloud;
-import org.dasein.cloud.compute.AutoScalingSupport;
-import org.dasein.cloud.compute.MachineImageSupport;
-import org.dasein.cloud.compute.SnapshotSupport;
-import org.dasein.cloud.compute.VirtualMachineSupport;
-import org.dasein.cloud.compute.VolumeSupport;
+import org.dasein.cloud.compute.*;
 import org.dasein.cloud.identity.ServiceAction;
 import org.dasein.cloud.identity.ShellKeySupport;
-import org.dasein.cloud.network.FirewallSupport;
-import org.dasein.cloud.network.IpAddressSupport;
-import org.dasein.cloud.network.VLANSupport;
-import org.dasein.cloud.network.VPNSupport;
+import org.dasein.cloud.network.*;
+import org.dasein.cloud.platform.MonitoringSupport;
 import org.dasein.cloud.util.APITrace;
 import org.dasein.cloud.util.XMLParser;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
+
+import javax.annotation.Nonnull;
+import javax.servlet.http.HttpServletResponse;
+import javax.xml.parsers.ParserConfigurationException;
+import java.io.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
 
 public class EC2Method {
     static private final Logger logger = AWSCloud.getLogger(EC2Method.class);
@@ -87,7 +70,12 @@ public class EC2Method {
     static public final String CREATE_OR_UPDATE_SCALING_TRIGGER = "CreateOrUpdateScalingTrigger";
     static public final String DELETE_AUTO_SCALING_GROUP        = "DeleteAutoScalingGroup";
     static public final String DELETE_LAUNCH_CONFIGURATION      = "DeleteLaunchConfiguration";
+    static public final String DELETE_SCALING_POLICY            = "DeletePolicy";
     static public final String DESCRIBE_AUTO_SCALING_GROUPS     = "DescribeAutoScalingGroups";
+    static public final String SUSPEND_AUTO_SCALING_GROUP       = "SuspendProcesses";
+    static public final String RESUME_AUTO_SCALING_GROUP        = "ResumeProcesses";
+    static public final String PUT_SCALING_POLICY               = "PutScalingPolicy";
+    static public final String DESCRIBE_SCALING_POLICIES        = "DescribePolicies";
     static public final String DESCRIBE_LAUNCH_CONFIGURATIONS   = "DescribeLaunchConfigurations";
     static public final String SET_DESIRED_CAPACITY             = "SetDesiredCapacity";
     static public final String UPDATE_AUTO_SCALING_GROUP        = "UpdateAutoScalingGroup";
@@ -121,6 +109,21 @@ public class EC2Method {
         else if( action.equals(UPDATE_AUTO_SCALING_GROUP) ) {
             return new ServiceAction[] { AutoScalingSupport.UPDATE_SCALING_GROUP };
         }
+        else if( action.equals(SUSPEND_AUTO_SCALING_GROUP) ) {
+          return new ServiceAction[] { AutoScalingSupport.SUSPEND_AUTO_SCALING_GROUP };
+        }
+        else if( action.equals(RESUME_AUTO_SCALING_GROUP) ) {
+          return new ServiceAction[] { AutoScalingSupport.RESUME_AUTO_SCALING_GROUP };
+        }
+        else if( action.equals(PUT_SCALING_POLICY) ) {
+          return new ServiceAction[] { AutoScalingSupport.PUT_SCALING_POLICY };
+        }
+        else if( action.equals(DELETE_SCALING_POLICY) ) {
+          return new ServiceAction[] { AutoScalingSupport.DELETE_SCALING_POLICY };
+        }
+        else if( action.equals(DESCRIBE_SCALING_POLICIES) ) {
+          return new ServiceAction[] { AutoScalingSupport.LIST_SCALING_POLICIES };
+        }
         return new ServiceAction[0];
     }
 
@@ -129,6 +132,7 @@ public class EC2Method {
     static public final String SDB_PREFIX = "sdb:";
     static public final String SNS_PREFIX = "sns:";
     static public final String SQS_PREFIX = "sqs:";
+    static public final String CW_PREFIX  = "cloudwatch:";
 
     // AMI operations
     static public final String BUNDLE_INSTANCE          = "BundleInstance";
@@ -139,7 +143,7 @@ public class EC2Method {
     static public final String DESCRIBE_IMAGES          = "DescribeImages";
     static public final String MODIFY_IMAGE_ATTRIBUTE   = "ModifyImageAttribute";
     static public final String REGISTER_IMAGE           = "RegisterImage";
-    
+
     // EBS operations
     static public final String ATTACH_VOLUME    = "AttachVolume";
     static public final String CREATE_VOLUME    = "CreateVolume";
@@ -188,6 +192,7 @@ public class EC2Method {
     static public final String REVOKE_SECURITY_GROUP_INGRESS    = "RevokeSecurityGroupIngress";
 
     // Snapshot operations
+    static public final String COPY_SNAPSHOT               = "CopySnapshot";
     static public final String CREATE_SNAPSHOT             = "CreateSnapshot";
     static public final String DELETE_SNAPSHOT             = "DeleteSnapshot";
     static public final String DESCRIBE_SNAPSHOTS          = "DescribeSnapshots";
@@ -215,7 +220,17 @@ public class EC2Method {
     static public final String DESCRIBE_SUBNETS        = "DescribeSubnets";
     static public final String DESCRIBE_VPCS           = "DescribeVpcs";
     static public final String DETACH_INTERNET_GATEWAY = "DetachInternetGateway";
+    static public final String DISASSOCIATE_ROUTE_TABLE = "DisassociateRouteTable";
     static public final String REPLACE_ROUTE_TABLE_ASSOCIATION = "ReplaceRouteTableAssociation";
+
+    // network ACL operations
+    static public final String CREATE_NETWORK_ACL        = "CreateNetworkAcl";
+    static public final String DESCRIBE_NETWORK_ACLS     = "DescribeNetworkAcls";
+    static public final String DELETE_NETWORK_ACL        = "DeleteNetworkAcl";
+    static public final String CREATE_NETWORK_ACL_ENTRY  = "CreateNetworkAclEntry";
+    static public final String DELETE_NETWORK_ACL_ENTRY  = "DeleteNetworkAclEntry";
+    static public final String REPLACE_NETWORK_ACL_ENTRY = "ReplaceNetworkAclEntry";
+    static public final String REPLACE_NETWORK_ACL_ASSOC = "ReplaceNetworkAclAssociation";
 
     // network interface operations
     static public final String ATTACH_NIC             = "AttachNetworkInterface";
@@ -236,6 +251,14 @@ public class EC2Method {
     static public final String DESCRIBE_VPN_CONNECTIONS    = "DescribeVpnConnections";
     static public final String DESCRIBE_VPN_GATEWAYS       = "DescribeVpnGateways";
     static public final String DETACH_VPN_GATEWAY          = "DetachVpnGateway";
+
+    // CloudWatch operations
+    static public final String LIST_METRICS = "ListMetrics";
+    static public final String DESCRIBE_ALARMS = "DescribeAlarms";
+    static public final String PUT_METRIC_ALARM = "PutMetricAlarm";
+    static public final String DELETE_ALARMS = "DeleteAlarms";
+    static public final String ENABLE_ALARM_ACTIONS = "EnableAlarmActions";
+    static public final String DISABLE_ALARM_ACTIONS = "DisableAlarmActions";
 
     static public @Nonnull ServiceAction[] asEC2ServiceAction(@Nonnull String action) {
         // TODO: implement me
@@ -366,8 +389,32 @@ public class EC2Method {
         else if( action.equals(REVOKE_SECURITY_GROUP_EGRESS) ) {
             return new ServiceAction[] { FirewallSupport.REVOKE };
         }
+
+        // network ACL operations
+        if( action.equals(CREATE_NETWORK_ACL_ENTRY) || action.equals(REPLACE_NETWORK_ACL_ENTRY) ) {
+            return new ServiceAction[] { NetworkFirewallSupport.AUTHORIZE };
+        }
+        else if( action.equals(REPLACE_NETWORK_ACL_ASSOC) ) {
+            return new ServiceAction[] { NetworkFirewallSupport.ASSOCIATE };
+        }
+        else if( action.equals(CREATE_NETWORK_ACL) ) {
+            return new ServiceAction[] { NetworkFirewallSupport.CREATE_FIREWALL };
+        }
+        else if( action.equals(DELETE_NETWORK_ACL) ) {
+            return new ServiceAction[] { NetworkFirewallSupport.REMOVE_FIREWALL };
+        }
+        else if( action.equals(DESCRIBE_NETWORK_ACLS) ) {
+            return new ServiceAction[] { NetworkFirewallSupport.GET_FIREWALL, NetworkFirewallSupport.LIST_FIREWALL };
+        }
+        else if( action.equals(DELETE_NETWORK_ACL_ENTRY) ) {
+            return new ServiceAction[] { NetworkFirewallSupport.REVOKE };
+        }
+
         // snapshot operations
-        if( action.equals(CREATE_SNAPSHOT) ) {
+        if( action.equals(COPY_SNAPSHOT) ) {
+            return new ServiceAction[] { SnapshotSupport.CREATE_SNAPSHOT };
+        }
+        else if( action.equals(CREATE_SNAPSHOT) ) {
             return new ServiceAction[] { SnapshotSupport.CREATE_SNAPSHOT };
         }
         else if( action.equals(DELETE_SNAPSHOT) ) {
@@ -420,7 +467,7 @@ public class EC2Method {
             return new ServiceAction[] { VLANSupport.REMOVE_VLAN };
         }
         else if( action.equals(DESCRIBE_DHCP_OPTIONS) ) {
-            return new ServiceAction[0];            
+            return new ServiceAction[0];
         }
         else if( action.equalsIgnoreCase(DESCRIBE_ROUTE_TABLES) ) {
             return new ServiceAction[] { VLANSupport.GET_ROUTING_TABLE, VLANSupport.LIST_ROUTING_TABLE };
@@ -491,6 +538,27 @@ public class EC2Method {
         else if( action.equals(DETACH_VPN_GATEWAY) ) {
             return new ServiceAction[] { VPNSupport.DETACH };
         }
+
+        // CloudWatch operations
+        if( action.equals(LIST_METRICS) ) {
+          return new ServiceAction[] {MonitoringSupport.LIST_METRICS};
+        }
+        else if ( action.equals( DESCRIBE_ALARMS ) ) {
+          return new ServiceAction[] {MonitoringSupport.DESCRIBE_ALARMS};
+        }
+        else if ( action.equals( PUT_METRIC_ALARM ) ) {
+          return new ServiceAction[] {MonitoringSupport.UPDATE_ALARM};
+        }
+        else if ( action.equals( DELETE_ALARMS ) ) {
+          return new ServiceAction[] {MonitoringSupport.REMOVE_ALARMS};
+        }
+        else if ( action.equals( ENABLE_ALARM_ACTIONS ) ) {
+          return new ServiceAction[] {MonitoringSupport.ENABLE_ALARM_ACTIONS};
+        }
+        else if ( action.equals( DISABLE_ALARM_ACTIONS ) ) {
+          return new ServiceAction[] {MonitoringSupport.DISABLE_ALARM_ACTIONS};
+        }
+
         return new ServiceAction[0];
     }
 
@@ -498,19 +566,19 @@ public class EC2Method {
 	private Map<String,String> parameters  = null;
 	private AWSCloud           provider    = null;
 	private String             url         = null;
-	
+
 	public EC2Method(AWSCloud provider, String url, Map<String,String> parameters) throws InternalException, CloudException {
 		this.url = url;
 		this.parameters = parameters;
 		this.provider = provider;
         ProviderContext ctx = provider.getContext();
-        
+
         if( ctx == null ) {
             throw new CloudException("Provider context is necessary for this request");
         }
 		parameters.put(AWSCloud.P_SIGNATURE, provider.signEc2(ctx.getAccessPrivate(), url, parameters));
 	}
-	
+
     public void checkSuccess(NodeList returnNodes) throws CloudException {
         if( returnNodes.getLength() > 0 ) {
             if( !returnNodes.item(0).getFirstChild().getNodeValue().equalsIgnoreCase("true") ) {
@@ -567,7 +635,6 @@ public class EC2Method {
     		if( logger.isDebugEnabled() ) {
     			logger.debug("Talking to server at " + url);
     		}
-            APITrace.trace(provider, parameters.get(AWSCloud.P_ACTION));
 
             HttpPost post = new HttpPost(url);
             HttpClient client = getClient();
@@ -601,6 +668,7 @@ public class EC2Method {
                 wire.debug("");
             }
             try {
+                APITrace.trace(provider, parameters.get(AWSCloud.P_ACTION));
                 response = client.execute(post);
                 if( wire.isDebugEnabled() ) {
                     wire.debug(response.getStatusLine().toString());
@@ -824,12 +892,12 @@ public class EC2Method {
 
 	    }
 	}
-	
+
 	private Document parseResponse(String responseBody) throws CloudException, InternalException {
 	    try {
             if( wire.isDebugEnabled() ) {
                 String[] lines = responseBody.split("\n");
-                
+
                 if( lines.length < 1 ) {
                     lines = new String[] { responseBody };
                 }
@@ -847,25 +915,25 @@ public class EC2Method {
         }
         catch( SAXException e ) {
             throw new CloudException(e);
-        }   
+        }
 	}
-	
+
 	private Document parseResponse(InputStream responseBodyAsStream) throws CloudException, InternalException {
 		try {
 			BufferedReader in = new BufferedReader(new InputStreamReader(responseBodyAsStream));
 			StringBuilder sb = new StringBuilder();
 			String line;
-	            
+
 			while( (line = in.readLine()) != null ) {
 				sb.append(line);
 				sb.append("\n");
 			}
 			in.close();
-	          
+
 			return parseResponse(sb.toString());
 		}
 		catch( IOException e ) {
 			throw new CloudException(e);
-		}			
+		}
     }
 }

@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2009-2012 enStratus Networks Inc
+ * Copyright (C) 2009-2013 Enstratius, Inc.
  *
  * ====================================================================
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,62 +18,13 @@
 
 package org.dasein.cloud.aws.compute;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.UnsupportedEncodingException;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Set;
-import java.util.SimpleTimeZone;
-import java.util.TreeMap;
-import java.util.TreeSet;
-import java.util.concurrent.Callable;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-import javax.servlet.http.HttpServletResponse;
-
 import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
-import org.dasein.cloud.CloudException;
-import org.dasein.cloud.InternalException;
-import org.dasein.cloud.OperationNotSupportedException;
-import org.dasein.cloud.ProviderContext;
-import org.dasein.cloud.Requirement;
-import org.dasein.cloud.ResourceStatus;
-import org.dasein.cloud.Tag;
+import org.dasein.cloud.*;
 import org.dasein.cloud.aws.AWSCloud;
-import org.dasein.cloud.compute.Architecture;
-import org.dasein.cloud.compute.ImageClass;
-import org.dasein.cloud.compute.MachineImage;
-import org.dasein.cloud.compute.Platform;
-import org.dasein.cloud.compute.VMLaunchOptions;
-import org.dasein.cloud.compute.VMScalingCapabilities;
-import org.dasein.cloud.compute.VMScalingOptions;
-import org.dasein.cloud.compute.VirtualMachine;
-import org.dasein.cloud.compute.VirtualMachineProduct;
-import org.dasein.cloud.compute.VirtualMachineSupport;
-import org.dasein.cloud.compute.VmState;
-import org.dasein.cloud.compute.VmStatistics;
+import org.dasein.cloud.compute.*;
 import org.dasein.cloud.identity.ServiceAction;
-import org.dasein.cloud.network.IPVersion;
-import org.dasein.cloud.network.IpAddress;
-import org.dasein.cloud.network.IpAddressSupport;
-import org.dasein.cloud.network.NetworkServices;
-import org.dasein.cloud.network.Subnet;
-import org.dasein.cloud.network.VLANSupport;
+import org.dasein.cloud.network.*;
 import org.dasein.cloud.util.APITrace;
 import org.dasein.cloud.util.Cache;
 import org.dasein.cloud.util.CacheLevel;
@@ -90,13 +41,26 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-public class EC2Instance implements VirtualMachineSupport {
+import javax.annotation.Nonnegative;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import javax.servlet.http.HttpServletResponse;
+import java.io.*;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.*;
+import java.util.concurrent.Callable;
+
+public class EC2Instance extends AbstractVMSupport {
 	static private final Logger logger = Logger.getLogger(EC2Instance.class);
 	static private final Calendar UTC_CALENDAR = Calendar.getInstance(new SimpleTimeZone(0, "GMT"));
 
 	private AWSCloud provider = null;
 	
 	EC2Instance(AWSCloud provider) {
+        super(provider);
 		this.provider = provider;
 	}
 
@@ -356,7 +320,7 @@ public class EC2Instance implements VirtualMachineSupport {
     }
 
     @Override
-    public void enableAnalytics(String instanceId) throws InternalException, CloudException {
+    public void enableAnalytics(@Nonnull String instanceId) throws InternalException, CloudException {
         APITrace.begin(provider, "enableVMAnalytics");
         try {
             if( provider.getEC2Provider().isAWS() || provider.getEC2Provider().isEnStratus() ) {
@@ -634,7 +598,7 @@ public class EC2Instance implements VirtualMachineSupport {
 	}
 
 	@Override
-	public VmStatistics getVMStatistics(String instanceId, long startTimestamp, long endTimestamp) throws InternalException, CloudException {
+	public @Nonnull VmStatistics getVMStatistics(@Nonnull String instanceId, @Nonnegative long startTimestamp, @Nonnegative long endTimestamp) throws InternalException, CloudException {
         APITrace.begin(provider, "getVMStatistics");
         try {
             VmStatistics statistics = new VmStatistics();
@@ -815,11 +779,6 @@ public class EC2Instance implements VirtualMachineSupport {
     }
 
     @Override
-    public @Nonnull Requirement identifyPasswordRequirement() {
-        return Requirement.NONE;
-    }
-
-    @Override
     public @Nonnull Requirement identifyPasswordRequirement(Platform platform) throws CloudException, InternalException {
         return Requirement.NONE;
     }
@@ -827,11 +786,6 @@ public class EC2Instance implements VirtualMachineSupport {
     @Override
     public @Nonnull Requirement identifyRootVolumeRequirement() {
         return Requirement.NONE;
-    }
-
-    @Override
-    public @Nonnull Requirement identifyShellKeyRequirement() {
-        return Requirement.OPTIONAL;
     }
 
     @Override
@@ -1335,11 +1289,29 @@ public class EC2Instance implements VirtualMachineSupport {
                     }
                 }
             }
+            if( server != null ) {
+                // wait for EC2 to figure out the server exists
+                VirtualMachine copy = getVirtualMachine(server.getProviderVirtualMachineId());
+
+                if( copy == null ) {
+                    long timeout = System.currentTimeMillis() + CalendarWrapper.MINUTE;
+
+                    while( timeout > System.currentTimeMillis() ) {
+                        try { Thread.sleep(5000L); }
+                        catch( InterruptedException ignore ) { }
+                        try { copy = getVirtualMachine(server.getProviderVirtualMachineId()); }
+                        catch( Throwable ignore ) { }
+                        if( copy != null ) {
+                            break;
+                        }
+                    }
+                }
+            }
             if( server != null && cfg.getBootstrapKey() != null ) {
                 try {
                     final String sid = server.getProviderVirtualMachineId();
 
-                    Callable<String> pwMethod = new Callable<String>() {
+                    final Callable<String> pwMethod = new Callable<String>() {
                         public String call() throws CloudException {
                             try {
                                 Map<String,String> params = provider.getStandardParameters(provider.getContext(), EC2Method.GET_PASSWORD_DATA);
@@ -1355,10 +1327,7 @@ public class EC2Instance implements VirtualMachineSupport {
                                     Node pw = blocks.item(0);
 
                                     if( pw.hasChildNodes() ) {
-                                        String password = pw.getFirstChild().getNodeValue();
-
-                                        provider.release();
-                                        return password;
+                                        return pw.getFirstChild().getNodeValue();
                                     }
                                     return null;
                                 }
@@ -1370,7 +1339,6 @@ public class EC2Instance implements VirtualMachineSupport {
                         }
                     };
 
-                    provider.hold();
                     try {
                         String password = pwMethod.call();
 
@@ -1456,97 +1424,6 @@ public class EC2Instance implements VirtualMachineSupport {
             APITrace.end();
         }
     }
-    
-	@Override
-    public @Nonnull VirtualMachine launch(@Nonnull String imageId, @Nonnull VirtualMachineProduct size, @Nullable String inZoneId, @Nonnull String name, @Nullable String description, @Nullable String keypair, @Nullable String inVlanId, boolean withMonitoring, boolean asImageSandbox, @Nullable String ... protectedByFirewalls) throws CloudException, InternalException {
-        VMLaunchOptions cfg = VMLaunchOptions.getInstance(size.getProviderProductId(), imageId, name, description == null ? name : description);
-
-        if( keypair != null ) {
-            cfg.withBoostrapKey(keypair);
-        }
-        if( inVlanId != null ) {
-            if( inZoneId == null ) {
-                NetworkServices svc = provider.getNetworkServices();
-
-                if( svc != null ) {
-                    VLANSupport support = svc.getVlanSupport();
-
-                    if( support != null ) {
-                        Subnet subnet = support.getSubnet(inVlanId);
-
-                        if( subnet == null ) {
-                            throw new CloudException("No such VPC subnet: " + inVlanId);
-                        }
-                        inZoneId = subnet.getProviderDataCenterId();
-                    }
-                }
-            }
-            if( inZoneId == null ) {
-                throw new CloudException("Unable to match zone to subnet");
-            }
-            cfg.inVlan(null, inZoneId, inVlanId);
-        }
-        else if( inZoneId != null ) {
-            cfg.inDataCenter(inZoneId);
-        }
-        if( withMonitoring ) {
-            cfg.withExtendedAnalytics();
-        }
-        if( protectedByFirewalls != null && protectedByFirewalls.length > 0 ) {
-            cfg.behindFirewalls(protectedByFirewalls);
-        }
-        return launch(cfg);
-    }
-
-	@Override
-    @Deprecated
-	public @Nonnull VirtualMachine launch(@Nonnull String imageId, @Nonnull VirtualMachineProduct size, @Nullable String inZoneId, @Nonnull String name, @Nullable String description, @Nullable String keypair, @Nullable String inVlanId, boolean withMonitoring, boolean asImageSandbox, @Nullable String[] protectedByFirewalls, @Nullable Tag ... tags) throws CloudException, InternalException {
-        VMLaunchOptions cfg = VMLaunchOptions.getInstance(size.getProviderProductId(), imageId, name, description == null ? name : description);
-
-        if( keypair != null ) {
-            cfg.withBoostrapKey(keypair);
-        }
-        if( inVlanId != null ) {
-            if( inZoneId == null ) {
-                NetworkServices svc = provider.getNetworkServices();
-                
-                if( svc != null ) {
-                    VLANSupport support = svc.getVlanSupport();
-                    
-                    if( support != null ) {
-                        Subnet subnet = support.getSubnet(inVlanId);
-                    
-                        if( subnet == null ) {
-                            throw new CloudException("No such VPC subnet: " + inVlanId);
-                        }
-                        inZoneId = subnet.getProviderDataCenterId();
-                    }
-                }
-            }
-            if( inZoneId == null ) {
-                throw new CloudException("Unable to match zone to subnet");
-            }
-            cfg.inVlan(null, inZoneId, inVlanId);
-        }
-        else if( inZoneId != null ) {
-            cfg.inDataCenter(inZoneId);
-        }
-        if( withMonitoring ) {
-            cfg.withExtendedAnalytics();
-        }
-        if( protectedByFirewalls != null && protectedByFirewalls.length > 0 ) {
-            cfg.behindFirewalls(protectedByFirewalls);
-        }
-        if( tags != null && tags.length > 0 ) {
-            HashMap<String,Object> meta = new HashMap<String, Object>();
-            
-            for( Tag t : tags ) {
-                meta.put(t.getKey(), t.getValue());
-            }
-            cfg.withMetaData(meta);
-        }
-        return launch(cfg);
-	}
 
     @Override
     public @Nonnull Iterable<ResourceStatus> listVirtualMachineStatus() throws InternalException, CloudException {
@@ -1595,6 +1472,37 @@ public class EC2Instance implements VirtualMachineSupport {
 
 	@Override
 	public @Nonnull Iterable<VirtualMachine> listVirtualMachines() throws InternalException, CloudException {
+        return listVirtualMachinesWithParams(null, null);
+	}
+
+    @Override
+    public @Nonnull Iterable<VirtualMachine> listVirtualMachines(@Nullable VMFilterOptions options) throws InternalException, CloudException {
+        Map<String, String> tags = ((options == null || options.isMatchesAny()) ? null : options.getTags());
+
+        if( tags != null ) {
+            // tag advantage of EC2-based filtering if we can...
+            Map<String, String> extraParameters = new HashMap<String, String>();
+
+            provider.putExtraParameters( extraParameters, provider.getTagFilterParams( options.getTags() ) );
+
+            String regex = options.getRegex();
+
+            if( regex != null ) {
+                // still have to match on regex
+                options = VMFilterOptions.getInstance(false, regex);
+            }
+            else {
+                // nothing else to match on
+                options = null;
+            }
+            return listVirtualMachinesWithParams( extraParameters, options );
+        }
+        else {
+            return listVirtualMachinesWithParams(null, options);
+        }
+    }
+
+    private @Nonnull Iterable<VirtualMachine> listVirtualMachinesWithParams(Map<String,String> extraParameters, @Nullable VMFilterOptions options) throws InternalException, CloudException {
         APITrace.begin(provider, "listVirtualMachines");
         try {
             ProviderContext ctx = provider.getContext();
@@ -1614,7 +1522,11 @@ public class EC2Instance implements VirtualMachineSupport {
                     }
                 }
             }
-            Map<String,String> parameters = provider.getStandardParameters(provider.getContext(), EC2Method.DESCRIBE_INSTANCES);
+
+            Map<String, String> parameters = provider.getStandardParameters( provider.getContext(), EC2Method.DESCRIBE_INSTANCES );
+
+            provider.putExtraParameters( parameters, extraParameters );
+
             EC2Method method = new EC2Method(provider, provider.getEc2Url(), parameters);
             ArrayList<VirtualMachine> list = new ArrayList<VirtualMachine>();
             NodeList blocks;
@@ -1635,7 +1547,11 @@ public class EC2Instance implements VirtualMachineSupport {
                     Node instance = instances.item(j);
 
                     if( instance.getNodeName().equals("item") ) {
-                        list.add(toVirtualMachine(ctx, instance, addresses));
+                        VirtualMachine vm = toVirtualMachine(ctx, instance, addresses);
+
+                        if( options == null || options.matches(vm) ) {
+                            list.add(vm);
+                        }
                     }
                 }
             }
@@ -1644,9 +1560,9 @@ public class EC2Instance implements VirtualMachineSupport {
         finally {
             APITrace.end();
         }
-	}
+    }
 
-    @Override
+        @Override
     public void pause(@Nonnull String vmId) throws InternalException, CloudException {
         throw new OperationNotSupportedException("Pause/unpause not supported by the EC2 API");
     }
@@ -1688,29 +1604,6 @@ public class EC2Instance implements VirtualMachineSupport {
         }
         return new String[0];
     }
-    
-	@Override
-	public void stop(@Nonnull String instanceId) throws InternalException, CloudException {
-        stop(instanceId, false);
-
-        long timeout = System.currentTimeMillis() + (CalendarWrapper.MINUTE * 10L);
-
-        while( timeout > System.currentTimeMillis() ) {
-            try { Thread.sleep(15000L); }
-            catch( InterruptedException ignore ) { }
-            try {
-                VirtualMachine vm = getVirtualMachine(instanceId);
-
-                if( vm == null || VmState.TERMINATED.equals(vm.getCurrentState()) || VmState.STOPPED.equals(vm.getCurrentState()) ) {
-                    return;
-                }
-            }
-            catch( Throwable ignore ) {
-                // ignore
-            }
-        }
-        stop(instanceId, true);
-	}
 
     @Override
     public void stop(@Nonnull String instanceId, boolean force) throws InternalException, CloudException {
@@ -1793,11 +1686,6 @@ public class EC2Instance implements VirtualMachineSupport {
         }        
         return dnsName;
 	}
-
-    @Override
-    public boolean supportsAnalytics() throws CloudException, InternalException {
-        return true;
-    }
 
     @Override
     public boolean supportsPauseUnpause(@Nonnull VirtualMachine vm) {
@@ -1884,269 +1772,302 @@ public class EC2Instance implements VirtualMachineSupport {
     }
 
     private @Nullable VirtualMachine toVirtualMachine(@Nonnull ProviderContext ctx, @Nullable Node instance, @Nonnull Iterable<IpAddress> addresses) throws CloudException {
-        if( instance == null ) {
-            return null;
-        }
-		NodeList attrs = instance.getChildNodes();
-		VirtualMachine server = new VirtualMachine();
-
-		server.setPersistent(false);
-		server.setProviderOwnerId(ctx.getAccountNumber());
-		server.setCurrentState(VmState.PENDING);
-		server.setName(null);
-		server.setDescription(null);
-		for( int i=0; i<attrs.getLength(); i++ ) {
-			Node attr = attrs.item(i);
-			String name;
-			
-			name = attr.getNodeName();
-			if( name.equals("instanceId") ) {
-				String value = attr.getFirstChild().getNodeValue().trim();
-				
-				server.setProviderVirtualMachineId(value);
-			}
-			else if( name.equals("architecture") ) {
-			    String value = attr.getFirstChild().getNodeValue().trim();
-			    Architecture architecture;
-			    
-			    if( value.equalsIgnoreCase("i386") ) {
-			        architecture = Architecture.I32;
-			    }
-			    else {
-			        architecture = Architecture.I64;
-			    }
-			    server.setArchitecture(architecture);
-			}
-			else if( name.equals("imageId") ) {
-				String value = attr.getFirstChild().getNodeValue().trim();
-				
-				server.setProviderMachineImageId(value);
-			}
-            else if( name.equals("kernelId") ) {
-                String value = attr.getFirstChild().getNodeValue().trim();
-
-                server.setTag("kernelImageId", value);
-                server.setProviderKernelImageId(value);
-            }
-            else if( name.equals("ramdiskId") ) {
-                String value = attr.getFirstChild().getNodeValue().trim();
-
-                server.setTag("ramdiskImageId", value);
-                server.setProviderRamdiskImageId(value);
-            }
-			else if( name.equalsIgnoreCase("subnetId") ) {
-                server.setProviderSubnetId(attr.getFirstChild().getNodeValue().trim());
-			}
-			else if( name.equalsIgnoreCase("vpcId") ) {
-                server.setProviderVlanId(attr.getFirstChild().getNodeValue().trim());			    
-			}
-			else if( name.equals("instanceState") ) {
-				NodeList details = attr.getChildNodes();
-				
-				for( int j=0; j<details.getLength(); j++ ) {
-					Node detail = details.item(j);
-					
-					name = detail.getNodeName();
-					if( name.equals("name") ) {
-						String value = detail.getFirstChild().getNodeValue().trim();
-						
-						server.setCurrentState(getServerState(value));
-					}
-				}
-			}
-			else if( name.equals("privateDnsName") ) {
-				if( attr.hasChildNodes() ) {
-					String value = attr.getFirstChild().getNodeValue();
-				
-					server.setPrivateDnsAddress(value);
-                    if( server.getPrivateIpAddresses() == null || server.getPrivateIpAddresses().length < 1 ) {
-					    value = guess(value);
-					    if( value != null ) {
-					        server.setPrivateIpAddresses(new String[] { value });
-					    }
-					    else {
-					        server.setPrivateIpAddresses(new String[0]);
-					    }
-					}
-				}
-			}
-			else if( name.equals("dnsName") ) {
-                if( attr.hasChildNodes() ) {
-                    String value = attr.getFirstChild().getNodeValue();
-
-                    server.setPublicDnsAddress(value);
-					if( server.getPublicIpAddresses() == null || server.getPublicIpAddresses().length < 1 ) {
-					    server.setPublicIpAddresses(new String[] { resolve(value) });
-					}
-				}
-			}
-            else if( name.equals("privateIpAddress") ) {
-                if( attr.hasChildNodes() ) {
-                    String value = attr.getFirstChild().getNodeValue();
-
-                    server.setPrivateIpAddresses(new String[] { value });
-                }
-            }
-            else if( name.equals("ipAddress") ) {
-                if( attr.hasChildNodes() ) {
-                    String value = attr.getFirstChild().getNodeValue();
-
-                    server.setPublicIpAddresses(new String[] { value });
-                    for( IpAddress addr : addresses ) {
-                        if( value.equals(addr.getAddress()) ) {
-                            server.setProviderAssignedIpAddressId(addr.getProviderIpAddressId());
-                            break;
-                        }
-                    }
-                }
-            }
-            else if( name.equals("rootDeviceType") ) {
-                if( attr.hasChildNodes() ) {
-                    server.setPersistent(attr.getFirstChild().getNodeValue().equalsIgnoreCase("ebs"));
-                }                
-            }
-            else if( name.equals("tagSet") ) {
-                if( attr.hasChildNodes() ) {
-                    NodeList tags = attr.getChildNodes();
-                    
-                    for( int j=0; j<tags.getLength(); j++ ) {
-                        Node tag = tags.item(j);
-                        
-                        if( tag.getNodeName().equals("item") && tag.hasChildNodes() ) {
-                            NodeList parts = tag.getChildNodes();
-                            String key = null, value = null;
-                            
-                            for( int k=0; k<parts.getLength(); k++ ) {
-                                Node part = parts.item(k);
-                                
-                                if( part.getNodeName().equalsIgnoreCase("key") ) {
-                                    if( part.hasChildNodes() ) {
-                                        key = part.getFirstChild().getNodeValue().trim();
-                                    }
-                                }
-                                else if( part.getNodeName().equalsIgnoreCase("value") ) {
-                                    if( part.hasChildNodes() ) {
-                                        value = part.getFirstChild().getNodeValue().trim();
-                                    }
-                                }
-                            }
-                            if( key != null ) {
-                                if( key.equalsIgnoreCase("name") ) {
-                                    server.setName(value);
-                                }
-                                else if( key.equalsIgnoreCase("description") ) {
-                                    server.setDescription(value);
-                                }
-                                else {
-                                    server.addTag(key, value);
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-			else if( name.equals("instanceType") ) {
-				String value = attr.getFirstChild().getNodeValue().trim();
-				
-				server.setProductId(value);
-			}
-			else if( name.equals("launchTime") ) {
-				SimpleDateFormat fmt = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
-				fmt.setCalendar(UTC_CALENDAR);
-				String value = attr.getFirstChild().getNodeValue().trim();
-
-				try {
-					server.setLastBootTimestamp(fmt.parse(value).getTime());
-					server.setCreationTimestamp(server.getLastBootTimestamp());
-				} 
-				catch( ParseException e ) {
-					logger.error(e);
-					e.printStackTrace();
-					throw new CloudException(e);
-				}
-			}
-			else if( name.equals("platform") ) {
-			    if( attr.hasChildNodes() ) {
-			    	Platform platform = Platform.guess(attr.getFirstChild().getNodeValue());
-			    	if (platform.equals(Platform.UNKNOWN)){
-			    		platform = Platform.UNIX;
-			    	}
-			        server.setPlatform(platform);
-			    }
-			}
-			else if( name.equals("placement") ) {
-				NodeList details = attr.getChildNodes();
-				
-				for( int j=0; j<details.getLength(); j++ ) {
-					Node detail = details.item(j);
-					
-					name = detail.getNodeName();
-					if( name.equals("availabilityZone") ) {
-					    if( detail.hasChildNodes() ) {
-					        String value = detail.getFirstChild().getNodeValue().trim();
-						
-					        server.setProviderDataCenterId(value);
-					    }
-					}
-				}
-			}
-      else if (name.equals( "keyName") ) {
-        String value = attr.getFirstChild().getNodeValue().trim();
-        server.setProviderKeypairId(value);
+      if (instance == null) {
+        return null;
       }
-      else if ( name.equals( "groupSet" ) ) {
-        ArrayList<String> firewalls = new ArrayList<String>();
-        if ( attr.hasChildNodes() ) {
-          NodeList tags = attr.getChildNodes();
+      NodeList attrs = instance.getChildNodes();
+      VirtualMachine server = new VirtualMachine();
 
-          for ( int j = 0; j < tags.getLength(); j++ ) {
-            Node tag = tags.item( j );
+      server.setPersistent(false);
+      server.setProviderOwnerId(ctx.getAccountNumber());
+      server.setCurrentState(VmState.PENDING);
+      server.setName(null);
+      server.setDescription(null);
+      for (int i = 0; i < attrs.getLength(); i++) {
+        Node attr = attrs.item(i);
+        String name;
 
-            if ( tag.getNodeName().equals( "item" ) && tag.hasChildNodes() ) {
-              NodeList parts = tag.getChildNodes();
-              String groupId = null;
+        name = attr.getNodeName();
+        if (name.equals("instanceId")) {
+          String value = attr.getFirstChild().getNodeValue().trim();
 
-              for ( int k = 0; k < parts.getLength(); k++ ) {
-                Node part = parts.item( k );
+          server.setProviderVirtualMachineId(value);
+        } else if (name.equals("architecture")) {
+          String value = attr.getFirstChild().getNodeValue().trim();
+          Architecture architecture;
 
-                if ( part.getNodeName().equalsIgnoreCase( "groupId" ) ) {
-                  if ( part.hasChildNodes() ) {
-                    groupId = part.getFirstChild().getNodeValue().trim();
-                  }
-                }
-              }
-              if ( groupId != null ) {
-                firewalls.add( groupId );
+          if (value.equalsIgnoreCase("i386")) {
+            architecture = Architecture.I32;
+          } else {
+            architecture = Architecture.I64;
+          }
+          server.setArchitecture(architecture);
+        } else if (name.equals("imageId")) {
+          String value = attr.getFirstChild().getNodeValue().trim();
+
+          server.setProviderMachineImageId(value);
+        } else if (name.equals("kernelId")) {
+          String value = attr.getFirstChild().getNodeValue().trim();
+
+          server.setTag("kernelImageId", value);
+          server.setProviderKernelImageId(value);
+        } else if (name.equals("ramdiskId")) {
+          String value = attr.getFirstChild().getNodeValue().trim();
+
+          server.setTag("ramdiskImageId", value);
+          server.setProviderRamdiskImageId(value);
+        } else if (name.equalsIgnoreCase("subnetId")) {
+          server.setProviderSubnetId(attr.getFirstChild().getNodeValue().trim());
+        } else if (name.equalsIgnoreCase("vpcId")) {
+          server.setProviderVlanId(attr.getFirstChild().getNodeValue().trim());
+        } else if (name.equals("instanceState")) {
+          NodeList details = attr.getChildNodes();
+
+          for (int j = 0; j < details.getLength(); j++) {
+            Node detail = details.item(j);
+
+            name = detail.getNodeName();
+            if (name.equals("name")) {
+              String value = detail.getFirstChild().getNodeValue().trim();
+
+              server.setCurrentState(getServerState(value));
+            }
+          }
+        } else if (name.equals("privateDnsName")) {
+          if (attr.hasChildNodes()) {
+            String value = attr.getFirstChild().getNodeValue();
+            RawAddress[] addrs = server.getPrivateAddresses();
+
+            server.setPrivateDnsAddress(value);
+            if (addrs == null || addrs.length < 1) {
+              value = guess(value);
+              if (value != null) {
+                server.setPrivateAddresses(new RawAddress(value));
               }
             }
           }
+        } else if (name.equals("dnsName")) {
+          if (attr.hasChildNodes()) {
+            String value = attr.getFirstChild().getNodeValue();
+            RawAddress[] addrs = server.getPublicAddresses();
+
+            server.setPublicDnsAddress(value);
+            if (addrs == null || addrs.length < 1) {
+              server.setPublicAddresses(new RawAddress(resolve(value)));
+            }
+          }
+        } else if (name.equals("privateIpAddress")) {
+          if (attr.hasChildNodes()) {
+            String value = attr.getFirstChild().getNodeValue();
+
+            server.setPrivateAddresses(new RawAddress(value));
+          }
+        } else if (name.equals("ipAddress")) {
+          if (attr.hasChildNodes()) {
+            String value = attr.getFirstChild().getNodeValue();
+
+            server.setPublicAddresses(new RawAddress(value));
+            for (IpAddress addr : addresses) {
+              if (value.equals(addr.getRawAddress().getIpAddress())) {
+                server.setProviderAssignedIpAddressId(addr.getProviderIpAddressId());
+                break;
+              }
+            }
+          }
+        } else if (name.equals("rootDeviceType")) {
+          if (attr.hasChildNodes()) {
+            server.setPersistent(attr.getFirstChild().getNodeValue().equalsIgnoreCase("ebs"));
+          }
+        } else if (name.equals("tagSet")) {
+
+          Map<String, String> tags = provider.getTagsFromTagSet(attr);
+          if (tags != null && tags.size() > 0) {
+            server.setTags(tags);
+            for (Map.Entry<String, String> entry : tags.entrySet()) {
+              if (entry.getKey().equalsIgnoreCase("name")) {
+                server.setName(entry.getValue());
+              } else if (entry.getKey().equalsIgnoreCase("description")) {
+                server.setDescription(entry.getValue());
+              }
+            }
+          }
+        } else if (name.equals("instanceType")) {
+          String value = attr.getFirstChild().getNodeValue().trim();
+
+          server.setProductId(value);
+        } else if (name.equals("launchTime")) {
+          SimpleDateFormat fmt = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+          fmt.setCalendar(UTC_CALENDAR);
+          String value = attr.getFirstChild().getNodeValue().trim();
+
+          try {
+            server.setLastBootTimestamp(fmt.parse(value).getTime());
+            server.setCreationTimestamp(server.getLastBootTimestamp());
+          } catch (ParseException e) {
+            logger.error(e);
+            e.printStackTrace();
+            throw new CloudException(e);
+          }
+        } else if (name.equals("platform")) {
+          if (attr.hasChildNodes()) {
+            Platform platform = Platform.guess(attr.getFirstChild().getNodeValue());
+            if (platform.equals(Platform.UNKNOWN)) {
+              platform = Platform.UNIX;
+            }
+            server.setPlatform(platform);
+          }
+        } else if (name.equals("placement")) {
+          NodeList details = attr.getChildNodes();
+
+          for (int j = 0; j < details.getLength(); j++) {
+            Node detail = details.item(j);
+
+            name = detail.getNodeName();
+            if (name.equals("availabilityZone")) {
+              if (detail.hasChildNodes()) {
+                String value = detail.getFirstChild().getNodeValue().trim();
+
+                server.setProviderDataCenterId(value);
+              }
+            }
+          }
+        } else if (name.equals("networkInterfaceSet")) {
+          ArrayList<String> networkInterfaceIds = new ArrayList<String>();
+          if (attr.hasChildNodes()) {
+            NodeList items = attr.getChildNodes();
+            for (int j = 0; j < items.getLength(); j++) {
+              Node item = items.item(j);
+
+              if (item.getNodeName().equals("item") && item.hasChildNodes()) {
+                NodeList parts = item.getChildNodes();
+                String networkInterfaceId = null;
+
+                for (int k = 0; k < parts.getLength(); k++) {
+                  Node part = parts.item(k);
+
+                  if (part.getNodeName().equalsIgnoreCase("networkInterfaceId")) {
+                    if (part.hasChildNodes()) {
+                      networkInterfaceId = part.getFirstChild().getNodeValue().trim();
+                    }
+                  }
+                }
+                if (networkInterfaceId != null) {
+                  networkInterfaceIds.add(networkInterfaceId);
+                }
+              }
+            }
+          }
+          if (networkInterfaceIds.size() > 0) {
+            server.setProviderNetworkInterfaceIds(networkInterfaceIds.toArray(new String[networkInterfaceIds.size()]));
+          }
+          /*
+            [FIXME?] TODO: Really networkInterfaceSet needs to be own type/resource
+            Example:
+            <networkInterfaceSet>
+              <item>
+                <networkInterfaceId>eni-1a2b3c4d</networkInterfaceId>
+                <subnetId>subnet-1a2b3c4d</subnetId>
+                <vpcId>vpc-1a2b3c4d</vpcId>
+                <description>Primary network interface</description>
+                <ownerId>111122223333</ownerId>
+                <status>in-use</status>
+                <macAddress>1b:2b:3c:4d:5e:6f</macAddress>
+                <privateIpAddress>10.0.0.12</privateIpAddress>
+                <sourceDestCheck>true</sourceDestCheck>
+                <groupSet>
+                  <item>
+                    <groupId>sg-1a2b3c4d</groupId>
+                    <groupName>my-security-group</groupName>
+                  </item>
+                </groupSet>
+                <attachment>
+                  <attachmentId>eni-attach-1a2b3c4d</attachmentId>
+                  <deviceIndex>0</deviceIndex>
+                  <status>attached</status>
+                  <attachTime>YYYY-MM-DDTHH:MM:SS+0000</attachTime>
+                  <deleteOnTermination>true</deleteOnTermination>
+                </attachment>
+                <association>
+                  <publicIp>198.51.100.63</publicIp>
+                  <ipOwnerId>111122223333</ipOwnerId>
+                </association>
+                <privateIpAddressesSet>
+                  <item>
+                    <privateIpAddress>10.0.0.12</privateIpAddress>
+                    <primary>true</primary>
+                    <association>
+                      <publicIp>198.51.100.63</publicIp>
+                      <ipOwnerId>111122223333</ipOwnerId>
+                    </association>
+                  </item>
+                  <item>
+                    <privateIpAddress>10.0.0.14</privateIpAddress>
+                    <primary>false</primary>
+                    <association>
+                      <publicIp>198.51.100.177</publicIp>
+                      <ipOwnerId>111122223333</ipOwnerId>
+                    </association>
+                  </item>
+                </privateIpAddressesSet>
+              </item>
+            </networkInterfaceSet>
+           */
         }
-        if ( firewalls.size() > 0 ) {
-          server.setProviderFirewallIds( firewalls.toArray( new String[]{} ) );
+        else if (name.equals("keyName")) {
+          String value = attr.getFirstChild().getNodeValue().trim();
+          server.setProviderKeypairId(value);
+        } else if (name.equals("groupSet")) {
+          ArrayList<String> firewalls = new ArrayList<String>();
+          if (attr.hasChildNodes()) {
+            NodeList tags = attr.getChildNodes();
+
+            for (int j = 0; j < tags.getLength(); j++) {
+              Node tag = tags.item(j);
+
+              if (tag.getNodeName().equals("item") && tag.hasChildNodes()) {
+                NodeList parts = tag.getChildNodes();
+                String groupId = null;
+
+                for (int k = 0; k < parts.getLength(); k++) {
+                  Node part = parts.item(k);
+
+                  if (part.getNodeName().equalsIgnoreCase("groupId")) {
+                    if (part.hasChildNodes()) {
+                      groupId = part.getFirstChild().getNodeValue().trim();
+                    }
+                  }
+                }
+                if (groupId != null) {
+                  firewalls.add(groupId);
+                }
+              }
+            }
+          }
+          if (firewalls.size() > 0) {
+            server.setProviderFirewallIds(firewalls.toArray(new String[firewalls.size()]));
+          }
         }
       }
+      if (server.getPlatform() == null) {
+        server.setPlatform(Platform.UNKNOWN);
+      }
+      server.setProviderRegionId(ctx.getRegionId());
+      if (server.getName() == null) {
+        server.setName(server.getProviderVirtualMachineId());
+      }
+      if (server.getDescription() == null) {
+        server.setDescription(server.getName() + " (" + server.getProductId() + ")");
+      }
+      if (server.getArchitecture() == null && server.getProductId() != null) {
+        server.setArchitecture(getArchitecture(server.getProductId()));
+      } else if (server.getArchitecture() == null) {
+        server.setArchitecture(Architecture.I64);
+      }
+      return server;
     }
-      if( server.getPlatform() == null ) {
-		    server.setPlatform(Platform.UNKNOWN);
-		}
-        server.setProviderRegionId(ctx.getRegionId());
-        if( server.getName() == null ) {
-            server.setName(server.getProviderVirtualMachineId());
-        }
-        if( server.getDescription() == null ) {
-            server.setDescription(server.getName() + " (" + server.getProductId() + ")");
-        }
-        if( server.getArchitecture() == null && server.getProductId() != null ) {
-            server.setArchitecture(getArchitecture(server.getProductId()));
-        }
-        else if( server.getArchitecture() == null ) {
-            server.setArchitecture(Architecture.I64);
-        }
-		return server;
-	}
-	
-	@Override
-	public void disableAnalytics(String instanceId) throws InternalException, CloudException {
+
+  @Override
+	public void disableAnalytics(@Nonnull String instanceId) throws InternalException, CloudException {
         APITrace.begin(provider, "disableVMAnalytics");
         try {
             if( provider.getEC2Provider().isAWS() || provider.getEC2Provider().isEnStratus() ) {
@@ -2242,4 +2163,20 @@ public class EC2Instance implements VirtualMachineSupport {
     public void updateTags(@Nonnull String vmId, @Nonnull Tag... tags) throws CloudException, InternalException {
         provider.createTags(vmId, tags);
     }
+
+    @Override
+    public void updateTags(@Nonnull String[] vmIds, @Nonnull Tag... tags) throws CloudException, InternalException {
+        provider.createTags(vmIds, tags);
+    }
+
+    @Override
+    public void removeTags(@Nonnull String vmId, @Nonnull Tag... tags) throws CloudException, InternalException {
+        provider.removeTags(vmId, tags);
+    }
+
+    @Override
+    public void removeTags(@Nonnull String[] vmIds, @Nonnull Tag... tags) throws CloudException, InternalException {
+        provider.removeTags(vmIds, tags);
+    }
+
 }

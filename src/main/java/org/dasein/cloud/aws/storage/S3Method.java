@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2009-2012 enStratus Networks Inc
+ * Copyright (C) 2009-2013 Enstratius, Inc.
  *
  * ====================================================================
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,39 +18,8 @@
 
 package org.dasein.cloud.aws.storage;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedReader;
-import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.UnsupportedEncodingException;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.text.SimpleDateFormat;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Properties;
-import java.util.SimpleTimeZone;
-import java.util.regex.Pattern;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-import javax.servlet.http.HttpServletResponse;
-import javax.xml.parsers.ParserConfigurationException;
-
 import org.apache.commons.codec.binary.Base64;
-import org.apache.http.Header;
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpHost;
-import org.apache.http.HttpResponse;
-import org.apache.http.HttpVersion;
+import org.apache.http.*;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpEntityEnclosingRequestBase;
 import org.apache.http.client.methods.HttpRequestBase;
@@ -76,6 +45,17 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import javax.servlet.http.HttpServletResponse;
+import javax.xml.parsers.ParserConfigurationException;
+import java.io.*;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.text.SimpleDateFormat;
+import java.util.*;
+import java.util.regex.Pattern;
 
 public class S3Method {
     static private final Logger logger = Logger.getLogger(S3Method.class);
@@ -208,7 +188,7 @@ public class S3Method {
             return format.format(new Date());
         }
         else {
-            SimpleDateFormat fmt = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss z", new Locale("US"));
+            SimpleDateFormat fmt = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss z");
             Calendar cal = Calendar.getInstance(new SimpleTimeZone(0, "GMT"));
 
             fmt.setCalendar(cal);
@@ -266,16 +246,30 @@ public class S3Method {
             HttpRequestBase method;
             HttpClient client;
             int status;
-    
+
             if( provider.getEC2Provider().isAWS() ) {
                 url.append("https://");
                 if( temporaryEndpoint == null ) {
                     boolean validDomainName = isValidDomainName(bucket);
                     if( bucket != null && validDomainName ) {
                         url.append(bucket);
-                        url.append(".");
+                        url.append(".s3.amazonaws.com/");
                     }
-                    url.append("s3.amazonaws.com/");
+                    else if ( bucket != null && !validDomainName) {
+                        String regionId = provider.getContext().getRegionId();
+
+                        if (regionId != null && !"us-east-1".equals(regionId)) {
+                            url.append("s3-");
+                            url.append(regionId);
+                            url.append(".amazonaws.com/");
+                        }
+                        else {
+                            url.append("s3.amazonaws.com/");
+                        }
+                    }
+                    else {
+                        url.append("s3.amazonaws.com/");
+                    }
                     if ( bucket != null && !validDomainName) {
                         url.append(bucket);
                         url.append("/");
@@ -649,7 +643,7 @@ public class S3Method {
             wire.debug(sb.toString());
 
 			return XMLParser.parse(new ByteArrayInputStream(sb.toString().getBytes()));
-        }
+		}
 		catch( IOException e ) {
 			logger.error(e);
 			e.printStackTrace();
