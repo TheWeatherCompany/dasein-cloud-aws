@@ -1147,7 +1147,7 @@ public class AWSCloud extends AbstractCloud {
    * @return the epoch time
    * @throws CloudException
    */
-  public long getTimestampValue(Node node) throws CloudException {
+  static public long getTimestampValue(Node node) throws CloudException {
     SimpleDateFormat fmt = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
     String value = getTextValue(node);
 

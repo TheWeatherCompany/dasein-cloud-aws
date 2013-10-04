@@ -41,14 +41,7 @@ import org.dasein.cloud.compute.MachineImageSupport;
 import org.dasein.cloud.compute.SnapshotSupport;
 import org.dasein.cloud.compute.VirtualMachineSupport;
 import org.dasein.cloud.compute.VolumeSupport;
-import org.dasein.cloud.identity.AccessKey;
-import org.dasein.cloud.identity.CloudGroup;
-import org.dasein.cloud.identity.CloudPermission;
-import org.dasein.cloud.identity.CloudPolicy;
-import org.dasein.cloud.identity.CloudUser;
-import org.dasein.cloud.identity.IdentityAndAccessSupport;
-import org.dasein.cloud.identity.ServiceAction;
-import org.dasein.cloud.identity.ShellKeySupport;
+import org.dasein.cloud.identity.*;
 import org.dasein.cloud.network.DNSSupport;
 import org.dasein.cloud.network.FirewallSupport;
 import org.dasein.cloud.network.IpAddressSupport;
@@ -76,6 +69,9 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
+import static org.dasein.cloud.aws.AWSCloud.getTextValue;
+import static org.dasein.cloud.aws.AWSCloud.getTimestampValue;
+
 /**
  * Implementation of the AWS IAM APIs based on the Dasein Cloud identity and access support.
  * @author George Reese (george.reese@imaginary.com)
@@ -90,7 +86,63 @@ public class IAM implements IdentityAndAccessSupport {
     public IAM(@Nonnull AWSCloud cloud) {
         provider = cloud;
     }
-    
+
+
+  @Override
+  public TemporaryAccessKey enableTemporaryAPIAccess( @Nonnull AssumeRoleOptions options ) throws CloudException, InternalException {
+    APITrace.begin( provider, "IAM.assumeRole" );
+    try {
+      Map<String, String> parameters = provider.getStandardParameters( provider.getContext(), STSMethod.ASSUME_ROLE, STSMethod.VERSION );
+      EC2Method method;
+      Document doc;
+
+      parameters.put( "RoleArn", options.getProviderRoleId() );
+      parameters.put( "RoleSessionName", options.getSessionName() );
+
+      method = new STSMethod( provider, parameters );
+      try {
+        doc = method.invoke();
+      }
+      catch ( EC2Exception e ) {
+        logger.error( e.getSummary() );
+        throw new CloudException( e );
+      }
+      return toTemporaryAccessKey( doc );
+    }
+    finally {
+      APITrace.end();
+    }
+  }
+
+  private TemporaryAccessKey toTemporaryAccessKey( Document doc ) throws CloudException, InternalException {
+    TemporaryAccessKey keys = new TemporaryAccessKey();
+
+    NodeList blocks = doc.getElementsByTagName( "Credentials" );
+    for ( int i = 0; i < blocks.getLength(); i++ ) {
+      Node attr = blocks.item( i );
+      String name = attr.getNodeName();
+
+      if ( "AccessKeyId".equals( name ) ) {
+        keys.setSharedPart( getTextValue( attr.getFirstChild() ) );
+      }
+      else if ( "SessionToken".equals( name ) ) {
+        keys.setSessionToken( getTextValue( attr.getFirstChild() ) );
+      }
+      else if ( "Expiration".equals( name ) ) {
+        keys.setExpiration( getTimestampValue( attr.getFirstChild() ) );
+      }
+      else if ( "SecretAccessKey".equals( name ) ) {
+        try {
+          keys.setSecretPart( getTextValue( attr.getFirstChild() ).getBytes( "utf-8" ) );
+        }
+        catch ( UnsupportedEncodingException ex ) {
+          throw new InternalException( ex );
+        }
+      }
+    }
+    return keys;
+  }
+
     @Override
     public void addUserToGroups(@Nonnull String providerUserId, @Nonnull String... providerGroupIds) throws CloudException, InternalException {
         APITrace.begin(provider, "IAM.addUserToGroups");
