@@ -54,8 +54,8 @@ public class AutoScaling implements AutoScalingSupport {
         this.provider = provider;
     }
 
-    @Override
-    public String createAutoScalingGroup(@Nonnull AutoScalingGroupOptions autoScalingGroupOptions) throws InternalException, CloudException {
+  @Override
+  public String createAutoScalingGroup(@Nonnull AutoScalingGroupOptions autoScalingGroupOptions) throws InternalException, CloudException {
     APITrace.begin(provider, "AutoScaling.createAutoScalingGroup");
     try {
       Map<String, String> parameters = getAutoScalingParameters(provider.getContext(), EC2Method.CREATE_AUTO_SCALING_GROUP);
@@ -132,8 +132,8 @@ public class AutoScaling implements AutoScalingSupport {
     }
   }
 
-    @Override
-    public String createAutoScalingGroup(@Nonnull String name, @Nonnull String launchConfigurationId, @Nonnull Integer minServers, @Nonnull Integer maxServers,
+  @Override
+  public String createAutoScalingGroup(@Nonnull String name, @Nonnull String launchConfigurationId, @Nonnull Integer minServers, @Nonnull Integer maxServers,
                                        @Nullable Integer cooldown, @Nullable String[] loadBalancerIds, @Nullable Integer desiredCapacity,
                                        @Nullable Integer healthCheckGracePeriod, @Nullable String healthCheckType, @Nullable String vpcZones,
                                        @Nullable String... zoneIds) throws InternalException, CloudException {
@@ -873,8 +873,22 @@ public class AutoScaling implements AutoScalingSupport {
         }
     }
 
-    @Override
-    public Collection<ScalingGroup> listScalingGroups() throws CloudException, InternalException {
+	/**
+	 * Provides backwards compatibility
+	 */
+	@Override
+	public Collection<ScalingGroup> listScalingGroups() throws CloudException, InternalException {
+		return listScalingGroups(AutoScalingGroupFilterOptions.getInstance());
+	}
+
+	/**
+	 * Returns filtered list of auto scaling groups.
+	 *
+	 * @param options the filter parameters
+	 * @return filtered list of scaling groups
+	 */
+	@Override
+    public Collection<ScalingGroup> listScalingGroups(AutoScalingGroupFilterOptions options) throws CloudException, InternalException {
         APITrace.begin(provider, "AutoScaling.listScalingGroups");
         try {
             ProviderContext ctx = provider.getContext();
@@ -907,7 +921,8 @@ public class AutoScaling implements AutoScalingSupport {
                     if( item.getNodeName().equals("member") ) {
                         ScalingGroup group = toScalingGroup(ctx, item);
 
-                        if( group != null ) {
+                        if( (group != null && (options != null && !options.hasCriteria()))
+		                        || (group != null && (options != null && options.hasCriteria() && options.matches(group))) ) {
                             list.add(group);
                         }
                     }
@@ -999,88 +1014,88 @@ public class AutoScaling implements AutoScalingSupport {
         }
     }
 
-    @Override
-    public void updateTags( @Nonnull String[] providerScalingGroupIds, @Nonnull AutoScalingTag... tags ) throws CloudException, InternalException {
-      APITrace.begin( provider, "AutoScaling.removeTags" );
-      try {
-        handleTagRequest( EC2Method.UPDATE_AUTO_SCALING_GROUP_TAGS, providerScalingGroupIds, tags );
-      }
-      finally {
-        APITrace.end();
-      }
+   @Override
+   public void updateTags( @Nonnull String[] providerScalingGroupIds, @Nonnull AutoScalingTag... tags ) throws CloudException, InternalException {
+     APITrace.begin( provider, "AutoScaling.removeTags" );
+     try {
+       handleTagRequest( EC2Method.UPDATE_AUTO_SCALING_GROUP_TAGS, providerScalingGroupIds, tags );
+     }
+     finally {
+       APITrace.end();
+     }
+   }
+
+   @Override
+   public void removeTags( @Nonnull String[] providerScalingGroupIds, @Nonnull AutoScalingTag... tags ) throws CloudException, InternalException {
+     APITrace.begin( provider, "AutoScaling.removeTags" );
+     try {
+       handleTagRequest( EC2Method.DELETE_AUTO_SCALING_GROUP_TAGS, providerScalingGroupIds, tags );
+     }
+     finally {
+       APITrace.end();
+     }
+   }
+
+  private void handleTagRequest( @Nonnull String methodName, @Nonnull String[] providerScalingGroupIds, @Nonnull AutoScalingTag... tags ) throws CloudException, InternalException {
+    Map<String, String> parameters = getAutoScalingParameters( provider.getContext(), methodName );
+    EC2Method method;
+
+    addAutoScalingTagParameters( parameters, providerScalingGroupIds, tags );
+
+    if ( parameters.size() == 0 ) {
+      return;
     }
 
-    @Override
-    public void removeTags( @Nonnull String[] providerScalingGroupIds, @Nonnull AutoScalingTag... tags ) throws CloudException, InternalException {
-      APITrace.begin( provider, "AutoScaling.removeTags" );
-      try {
-        handleTagRequest( EC2Method.DELETE_AUTO_SCALING_GROUP_TAGS, providerScalingGroupIds, tags );
-      }
-      finally {
-        APITrace.end();
-      }
+    method = new EC2Method( provider, getAutoScalingUrl(), parameters );
+    try {
+      method.invoke();
     }
-
-    private void handleTagRequest( @Nonnull String methodName, @Nonnull String[] providerScalingGroupIds, @Nonnull AutoScalingTag... tags ) throws CloudException, InternalException {
-      Map<String, String> parameters = getAutoScalingParameters( provider.getContext(), methodName );
-      EC2Method method;
-
-      addAutoScalingTagParameters( parameters, providerScalingGroupIds, tags );
-
-      if ( parameters.size() == 0 ) {
-        return;
-      }
-
-      method = new EC2Method( provider, getAutoScalingUrl(), parameters );
-      try {
-        method.invoke();
-      }
-      catch ( EC2Exception e ) {
-        logger.error( e.getSummary() );
-        throw new CloudException( e );
-      }
+    catch ( EC2Exception e ) {
+      logger.error( e.getSummary() );
+      throw new CloudException( e );
     }
+  }
 
-    static private void addAutoScalingTagParameters( @Nonnull Map<String, String> parameters, @Nonnull String[] providerScalingGroupIds, @Nonnull AutoScalingTag... tags ) {
-      /**
-       * unlike EC2's regular CreateTags call, for autoscaling we must add a set of tag parameters for each auto scaling group
-       * http://docs.aws.amazon.com/AutoScaling/latest/APIReference/API_CreateOrUpdateTags.html
-       */
-      int tagCounter = 1;
-      for ( int i = 0; i < providerScalingGroupIds.length; i++ ) {
-        for ( AutoScalingTag tag : tags ) {
-          parameters.put( "Tags.member." + tagCounter + ".ResourceType", "auto-scaling-group" );
-          parameters.put( "Tags.member." + tagCounter + ".ResourceId", providerScalingGroupIds[i] );
-          parameters.put( "Tags.member." + tagCounter + ".Key", tag.getKey() );
-          if ( tag.getValue() != null ) {
-            parameters.put( "Tags.member." + tagCounter + ".Value", tag.getValue() );
-          }
-          parameters.put( "Tags.member." + tagCounter + ".PropagateAtLaunch", String.valueOf( tag.isPropagateAtLaunch() ) );
-
-          tagCounter++;
+  static private void addAutoScalingTagParameters( @Nonnull Map<String, String> parameters, @Nonnull String[] providerScalingGroupIds, @Nonnull AutoScalingTag... tags ) {
+    /**
+     * unlike EC2's regular CreateTags call, for autoscaling we must add a set of tag parameters for each auto scaling group
+     * http://docs.aws.amazon.com/AutoScaling/latest/APIReference/API_CreateOrUpdateTags.html
+     */
+    int tagCounter = 1;
+    for ( int i = 0; i < providerScalingGroupIds.length; i++ ) {
+      for ( AutoScalingTag tag : tags ) {
+        parameters.put( "Tags.member." + tagCounter + ".ResourceType", "auto-scaling-group" );
+        parameters.put( "Tags.member." + tagCounter + ".ResourceId", providerScalingGroupIds[i] );
+        parameters.put( "Tags.member." + tagCounter + ".Key", tag.getKey() );
+        if ( tag.getValue() != null ) {
+          parameters.put( "Tags.member." + tagCounter + ".Value", tag.getValue() );
         }
+        parameters.put( "Tags.member." + tagCounter + ".PropagateAtLaunch", String.valueOf( tag.isPropagateAtLaunch() ) );
+
+        tagCounter++;
       }
     }
+  }
 
-    private @Nullable ResourceStatus toGroupStatus( @Nullable Node item) {
-          if( item == null ) {
-              return null;
-          }
-          NodeList attrs = item.getChildNodes();
-          String groupId = null;
+  private @Nullable ResourceStatus toGroupStatus( @Nullable Node item) {
+        if( item == null ) {
+            return null;
+        }
+        NodeList attrs = item.getChildNodes();
+        String groupId = null;
 
-          for( int i=0; i<attrs.getLength(); i++ ) {
-              Node attr = attrs.item(i);
+        for( int i=0; i<attrs.getLength(); i++ ) {
+            Node attr = attrs.item(i);
 
-              if( attr.getNodeName().equalsIgnoreCase("AutoScalingGroupName") ) {
-                  groupId = attr.getFirstChild().getNodeValue();
-              }
-          }
-          if( groupId == null ) {
-              return null;
-          }
-          return new ResourceStatus(groupId, true);
-      }
+            if( attr.getNodeName().equalsIgnoreCase("AutoScalingGroupName") ) {
+                groupId = attr.getFirstChild().getNodeValue();
+            }
+        }
+        if( groupId == null ) {
+            return null;
+        }
+        return new ResourceStatus(groupId, true);
+  }
 
     private @Nullable LaunchConfiguration toLaunchConfiguration(@Nullable Node item) {
         if( item == null ) {
