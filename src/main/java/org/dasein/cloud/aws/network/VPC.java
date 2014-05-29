@@ -23,6 +23,7 @@ import org.apache.log4j.Logger;
 import org.dasein.cloud.*;
 import org.dasein.cloud.aws.AWSCloud;
 import org.dasein.cloud.aws.compute.EC2Exception;
+import org.dasein.cloud.aws.compute.EC2Filter;
 import org.dasein.cloud.aws.compute.EC2Method;
 import org.dasein.cloud.aws.compute.EC2Gateway;
 import org.dasein.cloud.compute.ComputeServices;
@@ -2142,7 +2143,7 @@ public class VPC extends AbstractVLANSupport {
     public void removeNetworkInterface(@Nonnull String nicId) throws CloudException, InternalException {
         APITrace.begin(provider, "VLAN.removeNetworkInterface");
         try {
-            getEc2Gateway().invoke(ELBMethod.DELETE_NIC, Collections.singletonMap("NetworkInterfaceId", nicId));
+            getEc2Gateway().invoke(ELBMethod.DELETE_NIC, EC2Filter.singleParameterFilter("NetworkInterfaceId", nicId));
         } finally {
             APITrace.end();
         }
@@ -2152,11 +2153,10 @@ public class VPC extends AbstractVLANSupport {
     public void removeRoute(@Nonnull String inRoutingTableId, @Nonnull String destinationCidr) throws CloudException, InternalException {
         APITrace.begin(provider, "VLAN.removeRoute");
         try {
-            Map<String, String> parameters = new HashMap<String, String>();
-            parameters.put("RouteTableId", inRoutingTableId);
-            parameters.put("DestinationCidrBlock", destinationCidr);
+            EC2Filter filter = new EC2Filter().addParam("RouteTableId", inRoutingTableId)
+                    .addParam("DestinationCidrBlock", destinationCidr);
 
-            getEc2Gateway().invoke(ELBMethod.DELETE_ROUTE, parameters);
+            getEc2Gateway().invoke(ELBMethod.DELETE_ROUTE, filter);
         } finally {
             APITrace.end();
         }
@@ -2166,8 +2166,8 @@ public class VPC extends AbstractVLANSupport {
     public void removeRoutingTable(@Nonnull String routingTableId) throws CloudException, InternalException {
         APITrace.begin(provider, "VLAN.removeRoutingTable");
         try {
-            Map<String, String> parameters = Collections.singletonMap("RouteTableId", routingTableId);
-            getEc2Gateway().invoke(ELBMethod.DELETE_ROUTE_TABLE, parameters);
+            EC2Filter filter = EC2Filter.singleParameterFilter("RouteTableId", routingTableId);
+            getEc2Gateway().invoke(ELBMethod.DELETE_ROUTE_TABLE, filter);
         } finally {
             APITrace.end();
         }
@@ -2355,8 +2355,7 @@ public class VPC extends AbstractVLANSupport {
     public void removeVlan(String providerVpcId) throws CloudException, InternalException {
         APITrace.begin(provider, "VLAN.removeVlan");
         try {
-            Map<String, String> params = Collections.singletonMap("VpcId", providerVpcId);
-            getEc2Gateway().invoke(ELBMethod.DELETE_VPC, params);
+            getEc2Gateway().invoke(ELBMethod.DELETE_VPC, EC2Filter.singleParameterFilter("VpcId", providerVpcId));
         } finally {
             APITrace.end();
         }

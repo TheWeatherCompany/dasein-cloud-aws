@@ -42,7 +42,7 @@ import org.json.JSONObject;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
-import static org.dasein.cloud.compute.VMLaunchOptions.*;
+
 import javax.annotation.Nonnegative;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -682,21 +682,8 @@ public class EC2Instance extends AbstractVMSupport<AWSCloud> {
                 throw new CloudException("No context was established for this request");
             }
 
-            Future<Iterable<IpAddress>> ipPoolFuture = null;
             Iterable<IpAddress> addresses;
-            if( getProvider().hasNetworkServices() ) {
-                NetworkServices services = getProvider().getNetworkServices();
-
-                if( services != null ) {
-                    if( services.hasIpAddressSupport() ) {
-                        IpAddressSupport support = services.getIpAddressSupport();
-
-                        if( support != null ) {
-                            ipPoolFuture = support.listIpPoolConcurrently(IPVersion.IPV4, false);
-                        }
-                    }
-                }
-            }
+            Future<Iterable<IpAddress>> ipPoolFuture = getIPAddresses();
 
 
             Map<String, String> parameters = getProvider().getStandardParameters(getProvider().getContext(), EC2Method.DESCRIBE_INSTANCES);
@@ -1791,6 +1778,72 @@ public class EC2Instance extends AbstractVMSupport<AWSCloud> {
         return listVirtualMachinesWithParams(filterParameters, options);
     }
 
+    @Override
+    public @Nonnull Iterable<VirtualMachine> listVirtualMachinesByFilter(@Nonnull VMFilter vmfilter) throws InternalException, CloudException {
+        APITrace.begin(getProvider(), "listVirtualMachinesByFilter");
+        try {
+            Future<Iterable<IpAddress>> ipPoolFuture = getIPAddresses();
+
+            EC2Filter filter = EC2Filter.singleFilter("subnet-id", vmfilter.getSubnetId());
+            Document doc = getEc2Gateway().invoke(EC2Method.DESCRIBE_INSTANCES, filter);
+
+            List<VirtualMachine> list = new ArrayList<VirtualMachine>();
+            NodeList blocks = doc.getElementsByTagName("instancesSet");
+            Iterable<IpAddress> addresses;
+            for( int i = 0; i < blocks.getLength(); i++ ) {
+                NodeList instances = blocks.item(i).getChildNodes();
+
+                for( int j = 0; j < instances.getLength(); j++ ) {
+                    Node instance = instances.item(j);
+
+                    if( instance.getNodeName().equals("item") ) {
+
+                        try {
+                            if( ipPoolFuture != null ) {
+                                addresses = ipPoolFuture.get(30, TimeUnit.SECONDS);
+                            }
+                            else {
+                                addresses = Collections.emptyList();
+                            }
+                        } catch( InterruptedException e ) {
+                            logger.error(e.getMessage());
+                            addresses = Collections.emptyList();
+                        } catch( ExecutionException e ) {
+                            logger.error(e.getMessage());
+                            addresses = Collections.emptyList();
+                        } catch( TimeoutException e ) {
+                            logger.error(e.getMessage());
+                            addresses = Collections.emptyList();
+                        }
+
+                        list.add(toVirtualMachine(getProvider().getContext(), instance, addresses));
+                    }
+                }
+            }
+            return list;
+        } finally {
+            APITrace.end();
+        }
+    }
+
+    private Future<Iterable<IpAddress>> getIPAddresses() throws InternalException, CloudException {
+        Future<Iterable<IpAddress>> ipPoolFuture = null;
+        if( getProvider().hasNetworkServices() ) {
+            NetworkServices services = getProvider().getNetworkServices();
+
+            if( services != null ) {
+                if( services.hasIpAddressSupport() ) {
+                    IpAddressSupport support = services.getIpAddressSupport();
+
+                    if( support != null ) {
+                        ipPoolFuture = support.listIpPoolConcurrently(IPVersion.IPV4, false);
+                    }
+                }
+            }
+        }
+        return ipPoolFuture;
+    }
+
     private Map<String, String> createFilterParametersFrom(@Nullable VMFilterOptions options) {
         if( options == null || options.isMatchesAny() ) {
             return Collections.emptyMap();
@@ -1816,21 +1869,8 @@ public class EC2Instance extends AbstractVMSupport<AWSCloud> {
                 throw new CloudException("No context was established for this request");
             }
 
-            Future<Iterable<IpAddress>> ipPoolFuture = null;
             Iterable<IpAddress> addresses;
-            if( getProvider().hasNetworkServices() ) {
-                NetworkServices services = getProvider().getNetworkServices();
-
-                if( services != null ) {
-                    if( services.hasIpAddressSupport() ) {
-                        IpAddressSupport support = services.getIpAddressSupport();
-
-                        if( support != null ) {
-                            ipPoolFuture = support.listIpPoolConcurrently(IPVersion.IPV4, false);
-                        }
-                    }
-                }
-            }
+            Future<Iterable<IpAddress>> ipPoolFuture = getIPAddresses();
 
             Map<String, String> parameters = getProvider().getStandardParameters(getProvider().getContext(), EC2Method.DESCRIBE_INSTANCES);
 
@@ -2541,4 +2581,7 @@ public class EC2Instance extends AbstractVMSupport<AWSCloud> {
         getProvider().removeTags(vmIds, tags);
     }
 
+    protected EC2Gateway getEc2Gateway() {
+        return new EC2Gateway(getProvider());
+    }
 }

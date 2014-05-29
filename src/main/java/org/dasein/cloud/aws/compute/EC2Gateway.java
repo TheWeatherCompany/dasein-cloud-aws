@@ -7,6 +7,7 @@ import org.dasein.cloud.InternalException;
 import org.dasein.cloud.aws.AWSCloud;
 import org.w3c.dom.Document;
 
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -47,6 +48,14 @@ public class EC2Gateway {
 
             throw translateException(e);
         }
+    }
+
+    public Document invoke(String action, EC2Filter filter) throws InternalException, CloudException {
+        return invoke(action, filter.getParameters());
+    }
+
+    public Document invoke(String action) throws InternalException, CloudException {
+        return invoke(action, new HashMap<String, String>());
     }
 
     protected CloudException translateException(EC2Exception e) {
