@@ -24,6 +24,8 @@ import org.dasein.cloud.*;
 import org.dasein.cloud.aws.AWSCloud;
 import org.dasein.cloud.aws.AWSResourceNotFoundException;
 import org.dasein.cloud.aws.compute.EC2Exception;
+import org.dasein.cloud.aws.compute.EC2Filter;
+import org.dasein.cloud.aws.compute.EC2Gateway;
 import org.dasein.cloud.aws.compute.EC2Method;
 import org.dasein.cloud.compute.ComputeServices;
 import org.dasein.cloud.compute.VirtualMachineSupport;
@@ -522,44 +524,43 @@ public class SecurityGroup extends AbstractFirewallSupport {
     public @Nonnull Collection<Firewall> list() throws InternalException, CloudException {
         APITrace.begin(provider, "Firewall.list");
         try {
-            ProviderContext ctx = provider.getContext();
-
-            if( ctx == null ) {
-                throw new CloudException("No context has been established for this request");
-            }
-            Map<String, String> parameters = provider.getStandardParameters(provider.getContext(), EC2Method.DESCRIBE_SECURITY_GROUPS);
-            ArrayList<Firewall> list = new ArrayList<Firewall>();
-            EC2Method method;
-            NodeList blocks;
-            Document doc;
-
-            method = new EC2Method(provider, provider.getEc2Url(), parameters);
-            try {
-                doc = method.invoke();
-            } catch( EC2Exception e ) {
-                logger.error(e.getSummary());
-                throw new CloudException(e);
-            }
-            blocks = doc.getElementsByTagName("securityGroupInfo");
-            for( int i = 0; i < blocks.getLength(); i++ ) {
-                NodeList items = blocks.item(i).getChildNodes();
-
-                for( int j = 0; j < items.getLength(); j++ ) {
-                    Node item = items.item(j);
-
-                    if( item.getNodeName().equals("item") ) {
-                        Firewall firewall = toFirewall(ctx, item);
-
-                        if( firewall != null ) {
-                            list.add(firewall);
-                        }
-                    }
-                }
-            }
-            return list;
+            Document doc = getEc2Gateway().invoke(EC2Method.DESCRIBE_SECURITY_GROUPS);
+            return toFirewalls(doc);
         } finally {
             APITrace.end();
         }
+    }
+
+    @Override
+    public @Nonnull Collection<Firewall> list(String networkId) throws InternalException, CloudException {
+        APITrace.begin(provider, "Firewall.listByNetworkId");
+        try {
+            Document doc = getEc2Gateway().invoke(EC2Method.DESCRIBE_SECURITY_GROUPS, EC2Filter.singleFilter("vpc-id", networkId));
+            return toFirewalls(doc);
+        } finally {
+            APITrace.end();
+        }
+    }
+
+    private Collection<Firewall> toFirewalls(Document doc) {
+        NodeList blocks = doc.getElementsByTagName("securityGroupInfo");
+        ArrayList<Firewall> list = new ArrayList<Firewall>();
+        for( int i = 0; i < blocks.getLength(); i++ ) {
+            NodeList items = blocks.item(i).getChildNodes();
+
+            for( int j = 0; j < items.getLength(); j++ ) {
+                Node item = items.item(j);
+
+                if( item.getNodeName().equals("item") ) {
+                    Firewall firewall = toFirewall(provider.getContext(), item);
+
+                    if( firewall != null ) {
+                        list.add(firewall);
+                    }
+                }
+            }
+        }
+        return list;
     }
 
     @Override
@@ -1020,5 +1021,9 @@ public class SecurityGroup extends AbstractFirewallSupport {
             fwId = fwName;
         }
         return new ResourceStatus(fwId, true);
+    }
+
+    protected EC2Gateway getEc2Gateway() {
+        return new EC2Gateway(provider);
     }
 }
