@@ -1760,70 +1760,24 @@ public class EC2Instance extends AbstractVMSupport<AWSCloud> {
 
     @Override
     public @Nonnull Iterable<VirtualMachine> listVirtualMachines() throws InternalException, CloudException {
-        return listVirtualMachinesWithParams(null, null);
+        return listVirtualMachinesWithParams(null);
     }
 
     @Override
     public @Nonnull Iterable<VirtualMachine> listVirtualMachines(@Nullable VMFilterOptions options) throws InternalException, CloudException {
-        Map<String, String> filterParameters = createFilterParametersFrom(options);
-        if( options.getRegex() != null ) {
+        if (options == null) {
+            return listVirtualMachines();
+        }
+
+        if (options.getRegex() != null) {
             // still have to match on regex
             options = VMFilterOptions.getInstance(false, options.getRegex());
-        }
-        else {
+        } else {
             // nothing else to match on
             options = null;
         }
 
-        return listVirtualMachinesWithParams(filterParameters, options);
-    }
-
-    @Override
-    public @Nonnull Iterable<VirtualMachine> listVirtualMachinesByFilter(@Nonnull VMFilter vmfilter) throws InternalException, CloudException {
-        APITrace.begin(getProvider(), "listVirtualMachinesByFilter");
-        try {
-            Future<Iterable<IpAddress>> ipPoolFuture = getIPAddresses();
-
-            EC2Filter filter = EC2Filter.singleFilter("subnet-id", vmfilter.getSubnetId());
-            Document doc = getEc2Gateway().invoke(EC2Method.DESCRIBE_INSTANCES, filter);
-
-            List<VirtualMachine> list = new ArrayList<VirtualMachine>();
-            NodeList blocks = doc.getElementsByTagName("instancesSet");
-            Iterable<IpAddress> addresses;
-            for( int i = 0; i < blocks.getLength(); i++ ) {
-                NodeList instances = blocks.item(i).getChildNodes();
-
-                for( int j = 0; j < instances.getLength(); j++ ) {
-                    Node instance = instances.item(j);
-
-                    if( instance.getNodeName().equals("item") ) {
-
-                        try {
-                            if( ipPoolFuture != null ) {
-                                addresses = ipPoolFuture.get(30, TimeUnit.SECONDS);
-                            }
-                            else {
-                                addresses = Collections.emptyList();
-                            }
-                        } catch( InterruptedException e ) {
-                            logger.error(e.getMessage());
-                            addresses = Collections.emptyList();
-                        } catch( ExecutionException e ) {
-                            logger.error(e.getMessage());
-                            addresses = Collections.emptyList();
-                        } catch( TimeoutException e ) {
-                            logger.error(e.getMessage());
-                            addresses = Collections.emptyList();
-                        }
-
-                        list.add(toVirtualMachine(getProvider().getContext(), instance, addresses));
-                    }
-                }
-            }
-            return list;
-        } finally {
-            APITrace.end();
-        }
+        return listVirtualMachinesWithParams(options);
     }
 
     private Future<Iterable<IpAddress>> getIPAddresses() throws InternalException, CloudException {
@@ -1857,37 +1811,25 @@ public class EC2Instance extends AbstractVMSupport<AWSCloud> {
         if( options.getVmStates() != null ) {
             getProvider().addFilterParameter(extraParameters, filterIndex++, "instance-state-name", options.getVmStates());
         }
+        if (options.getSubnetId() != null) {
+            extraParameters.put("Filter." + filterIndex + ".Name", "subnet-id");
+            extraParameters.put("Filter." + filterIndex + ".Value", options.getSubnetId());
+            filterIndex++;
+        }
+
         return extraParameters;
     }
 
-    private @Nonnull Iterable<VirtualMachine> listVirtualMachinesWithParams(Map<String, String> extraParameters, @Nullable VMFilterOptions options) throws InternalException, CloudException {
+    private @Nonnull Iterable<VirtualMachine> listVirtualMachinesWithParams(@Nullable VMFilterOptions options) throws InternalException, CloudException {
         APITrace.begin(getProvider(), "listVirtualMachines");
         try {
-            ProviderContext ctx = getProvider().getContext();
-
-            if( ctx == null ) {
-                throw new CloudException("No context was established for this request");
-            }
-
-            Iterable<IpAddress> addresses;
             Future<Iterable<IpAddress>> ipPoolFuture = getIPAddresses();
 
-            Map<String, String> parameters = getProvider().getStandardParameters(getProvider().getContext(), EC2Method.DESCRIBE_INSTANCES);
+            EC2Filter filter = EC2Filter.withParams(createFilterParametersFrom(options));
+            Document doc = getEc2Gateway().invoke(EC2Method.DESCRIBE_INSTANCES, filter);
 
-            getProvider().putExtraParameters(parameters, extraParameters);
-
-            EC2Method method = new EC2Method(getProvider(), getProvider().getEc2Url(), parameters);
             ArrayList<VirtualMachine> list = new ArrayList<VirtualMachine>();
-            NodeList blocks;
-            Document doc;
-
-            try {
-                doc = method.invoke();
-            } catch( EC2Exception e ) {
-                logger.error(e.getSummary());
-                throw new CloudException(e);
-            }
-            blocks = doc.getElementsByTagName("instancesSet");
+            NodeList blocks = doc.getElementsByTagName("instancesSet");
             for( int i = 0; i < blocks.getLength(); i++ ) {
                 NodeList instances = blocks.item(i).getChildNodes();
 
@@ -1895,7 +1837,7 @@ public class EC2Instance extends AbstractVMSupport<AWSCloud> {
                     Node instance = instances.item(j);
 
                     if( instance.getNodeName().equals("item") ) {
-
+                        Iterable<IpAddress> addresses;
                         try {
                             if( ipPoolFuture != null ) {
                                 addresses = ipPoolFuture.get(30, TimeUnit.SECONDS);
@@ -1914,7 +1856,7 @@ public class EC2Instance extends AbstractVMSupport<AWSCloud> {
                             addresses = Collections.emptyList();
                         }
 
-                        VirtualMachine vm = toVirtualMachine(ctx, instance, addresses);
+                        VirtualMachine vm = toVirtualMachine(getContext(), instance, addresses);
 
                         if( options == null || options.matches(vm) ) {
                             list.add(vm);

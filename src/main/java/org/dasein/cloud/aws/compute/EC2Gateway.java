@@ -7,6 +7,7 @@ import org.dasein.cloud.InternalException;
 import org.dasein.cloud.aws.AWSCloud;
 import org.w3c.dom.Document;
 
+import javax.annotation.Nonnull;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -33,7 +34,7 @@ public class EC2Gateway {
      * @throws InternalException
      * @throws CloudException
      */
-    public Document invoke(String action, Map<String, String> params) throws InternalException, CloudException {
+    public Document invoke(@Nonnull String action, @Nonnull Map<String, String> params) throws InternalException, CloudException {
         Map<String, String> parameters = provider.getStandardParameters(provider.getContext(), action);
         parameters.putAll(params);
 
@@ -50,11 +51,11 @@ public class EC2Gateway {
         }
     }
 
-    public Document invoke(String action, EC2Filter filter) throws InternalException, CloudException {
+    public Document invoke(@Nonnull String action, @Nonnull EC2Filter filter) throws InternalException, CloudException {
         return invoke(action, filter.getParameters());
     }
 
-    public Document invoke(String action) throws InternalException, CloudException {
+    public Document invoke(@Nonnull String action) throws InternalException, CloudException {
         return invoke(action, new HashMap<String, String>());
     }
 
