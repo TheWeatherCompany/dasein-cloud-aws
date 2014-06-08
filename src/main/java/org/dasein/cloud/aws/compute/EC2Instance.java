@@ -1777,7 +1777,7 @@ public class EC2Instance extends AbstractVMSupport<AWSCloud> {
             options = VMFilterOptions.getInstance(false, options.getRegex());
         } else {
             // nothing else to match on
-            options = null;
+            options = options.getSubnetId() != null ? options : null;
         }
 
         return listVirtualMachinesWithParams(options);
@@ -1816,7 +1816,7 @@ public class EC2Instance extends AbstractVMSupport<AWSCloud> {
         }
         if (options.getSubnetId() != null) {
             extraParameters.put("Filter." + filterIndex + ".Name", "subnet-id");
-            extraParameters.put("Filter." + filterIndex + ".Value", options.getSubnetId());
+            extraParameters.put("Filter." + filterIndex + ".Value.1", options.getSubnetId());
             filterIndex++;
         }
 

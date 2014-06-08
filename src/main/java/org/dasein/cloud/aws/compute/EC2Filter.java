@@ -70,7 +70,7 @@ public class EC2Filter {
 
         int i = 1;
         for (String value : values) {
-            parameters.put("Filter." + counter + ".Value" + i, value);
+            parameters.put("Filter." + counter + ".Value." + i, value);
             i++;
         }
         counter++;

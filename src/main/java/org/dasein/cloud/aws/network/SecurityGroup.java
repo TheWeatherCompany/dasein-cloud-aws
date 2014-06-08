@@ -271,6 +271,11 @@ public class SecurityGroup extends AbstractFirewallSupport {
                 doc = method.invoke();
             } catch( EC2Exception e ) {
                 logger.error(e.getSummary());
+
+                if (e.getCode().equals("CannotDelete")) {
+                    throw new ResourceDeletionException(e.getMessage());
+                }
+
                 throw new CloudException(e);
             }
             blocks = doc.getElementsByTagName("return");
