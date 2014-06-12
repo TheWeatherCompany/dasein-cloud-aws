@@ -762,6 +762,11 @@ public class ElasticLoadBalancer extends AbstractLoadBalancerSupport<AWSCloud> {
     }
 
     @Override
+    public void detachLoadBalancerFromSubnets(@Nonnull String fromLoadBalancerId, @Nonnull String ... subnetIdsToDelete) throws CloudException, InternalException {
+      throw new OperationNotSupportedException("Not yet implemented.");
+    }
+
+    @Override
     public void removeDataCenters( @Nonnull String toLoadBalancerId, @Nonnull String... availabilityZoneIds ) throws CloudException, InternalException {
         APITrace.begin(provider, "LB.removeDataCenters");
         try {
