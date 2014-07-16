@@ -330,37 +330,31 @@ public class AWSCloud extends AbstractCloud {
         }
     }
 
-    public boolean removeTags( String resourceId, Tag... keyValuePairs ) {
-        return removeTags(new String[]{resourceId}, keyValuePairs);
+    public void removeTags( String resourceId, Tag... keyValuePairs ) throws CloudException, InternalException {
+        removeTags(new String[]{resourceId}, keyValuePairs);
     }
 
-    public boolean removeTags( String[] resourceIds, Tag... keyValuePairs ) {
+    public void removeTags( String[] resourceIds, Tag... keyValuePairs ) throws InternalException, CloudException {
         APITrace.begin(this, "Cloud.removeTags");
         try {
-            try {
-                Map<String, String> parameters = getStandardParameters(getContext(), "DeleteTags");
-                EC2Method method;
+            Map<String, String> parameters = getStandardParameters(getContext(), "DeleteTags");
+            EC2Method method;
 
-                for( int i = 0; i < resourceIds.length; i++ ) {
-                    parameters.put("ResourceId." + ( i + 1 ), resourceIds[i]);
-                }
-
-                for( int i = 0; i < keyValuePairs.length; i++ ) {
-                    String key = keyValuePairs[i].getKey();
-                    String value = keyValuePairs[i].getValue();
-
-                    parameters.put("Tag." + (i + 1) + ".Key", key);
-                    if (value != null && value.length() > 0) {
-                        parameters.put("Tag." + (i + 1) + ".Value", value);
-                    }
-                }
-                method = new EC2Method(this, getEc2Url(), parameters);
-                method.invoke();
-                return true;
-            } catch( Throwable ignore ) {
-                logger.error("Error while removing tags for " + Arrays.toString(resourceIds) + ".", ignore);
-                return false;
+            for( int i = 0; i < resourceIds.length; i++ ) {
+                parameters.put("ResourceId." + ( i + 1 ), resourceIds[i]);
             }
+
+            for( int i = 0; i < keyValuePairs.length; i++ ) {
+                String key = keyValuePairs[i].getKey();
+                String value = keyValuePairs[i].getValue();
+
+                parameters.put("Tag." + (i + 1) + ".Key", key);
+                if (value != null && value.length() > 0) {
+                    parameters.put("Tag." + (i + 1) + ".Value", value);
+                }
+            }
+            method = new EC2Method(this, getEc2Url(), parameters);
+            method.invoke();
         } finally {
             APITrace.end();
         }
