@@ -2558,7 +2558,7 @@ public class EC2Instance extends AbstractVMSupport<AWSCloud> {
         }
     }
 
-    private boolean checkExistingInstance(String wmId) throws CloudException, InternalException {
+    private boolean checkExistingInstance(@Nonnull String wmId) throws CloudException, InternalException {
         try {
             return getVirtualMachine(wmId) != null;
         } catch (Exception ex) {
