@@ -2551,7 +2551,7 @@ public class EC2Instance extends AbstractVMSupport<AWSCloud> {
         //because need verify the instance exists in the region specified by the request
         for (String vmId : vmIds) {
             if(checkExistingInstance(vmId)) {
-                removeTags(vmId, tags);
+                getProvider().removeTags(vmId, tags);
             } else {
                 throw EC2Exception.create(404, null, null, String.format("No such instance [%s] in region [%s]", vmId, getContext().getRegionId()));
             }
