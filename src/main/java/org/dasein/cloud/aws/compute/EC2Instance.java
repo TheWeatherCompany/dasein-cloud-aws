@@ -2542,12 +2542,28 @@ public class EC2Instance extends AbstractVMSupport<AWSCloud> {
 
     @Override
     public void removeTags(@Nonnull String vmId, @Nonnull Tag... tags) throws CloudException, InternalException {
-        getProvider().removeTags(vmId, tags);
+        removeTags(new String[]{vmId}, tags);
     }
 
     @Override
     public void removeTags(@Nonnull String[] vmIds, @Nonnull Tag... tags) throws CloudException, InternalException {
-        getProvider().removeTags(vmIds, tags);
+        //response with 204 status we get every request with any valid instance id (if instance not exist)
+        //because need verify the instance exists in the region specified by the request
+        for (String vmId : vmIds) {
+            if(checkExistingInstance(vmId)) {
+                removeTags(vmId, tags);
+            } else {
+                throw EC2Exception.create(404, null, null, String.format("No such instance [%s] in region [%s]", vmId, getContext().getRegionId()));
+            }
+        }
+    }
+
+    private boolean checkExistingInstance(String wmId) throws CloudException, InternalException {
+        try {
+            return getVirtualMachine(wmId) != null;
+        } catch (Exception ex) {
+            return false;
+        }
     }
 
 }
