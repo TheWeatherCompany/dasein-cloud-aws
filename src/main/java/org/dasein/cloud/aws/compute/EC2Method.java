@@ -265,6 +265,9 @@ public class EC2Method {
     // Account operations
     static public final String DESCRIBE_ACCOUNT_ATTRIBUTES      = "DescribeAccountAttributes";
 
+    //Quotas operations
+    static public final String DESCRIBE_TRUSTED_ADVISOR_CHECKS      = "DescribeTrustedAdvisorChecks";
+    static public final String DESCRIBE_TRUSTED_ADVISOR_CHECK_RESULT      = "DescribeTrustedAdvisorCheckResult";
 
     static public @Nonnull ServiceAction[] asEC2ServiceAction(@Nonnull String action) {
         // TODO: implement me

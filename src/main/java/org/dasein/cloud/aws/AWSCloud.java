@@ -30,7 +30,6 @@ import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.params.BasicHttpParams;
 import org.apache.http.params.HttpParams;
 import org.apache.http.params.HttpProtocolParams;
-import org.apache.http.protocol.HTTP;
 import org.apache.http.protocol.HttpContext;
 import org.apache.log4j.Logger;
 import org.dasein.cloud.*;
@@ -41,10 +40,12 @@ import org.dasein.cloud.aws.compute.EC2Method;
 import org.dasein.cloud.aws.identity.AWSIdentityServices;
 import org.dasein.cloud.aws.network.EC2NetworkServices;
 import org.dasein.cloud.aws.platform.AWSPlatformServices;
+import org.dasein.cloud.aws.quotas.EC2QuotaService;
 import org.dasein.cloud.aws.storage.AWSCloudStorageServices;
 import org.dasein.cloud.compute.ComputeServices;
 import org.dasein.cloud.compute.VirtualMachineSupport;
 import org.dasein.cloud.platform.KeyValuePair;
+import org.dasein.cloud.quotas.QuotaServices;
 import org.dasein.cloud.storage.BlobStoreSupport;
 import org.dasein.cloud.storage.StorageServices;
 import org.dasein.cloud.util.APITrace;
@@ -621,6 +622,16 @@ public class AWSCloud extends AbstractCloud {
 
         if( p.isAWS() || p.isEnStratus() ) {
             return new AWSPlatformServices(this);
+        }
+        return null;
+    }
+
+    @Override
+    public @Nullable QuotaServices getQuotaServices() {
+        EC2Provider p = getEC2Provider();
+
+        if( p.isAWS() || p.isEnStratus() ) {
+            return new EC2QuotaService(this);
         }
         return null;
     }
