@@ -151,7 +151,24 @@ public class CloudWatch extends AbstractMonitoringSupport {
     }
 
     @Override
-    public @Nonnull Collection<Alarm> listAlarms( AlarmFilterOptions options ) throws InternalException, CloudException {
+    public @Nonnull Collection<Alarm> listAlarms( final AlarmFilterOptions options ) throws InternalException, CloudException {
+        PopulatorThread<Alarm> populator;
+
+        provider.hold();
+        populator = new PopulatorThread<Alarm>(new JiteratorPopulator<Alarm>() {
+            public void populate( @Nonnull Jiterator<Alarm> iterator ) throws CloudException, InternalException {
+                try {
+                    populateAlarm(iterator, null, options);
+                } finally {
+                    provider.release();
+                }
+            }
+        });
+        populator.populate();
+        return populator.getResult();
+    }
+
+    private void populateAlarm( @Nonnull Jiterator<Alarm> iterator, @Nullable String nextToken, AlarmFilterOptions options) throws CloudException, InternalException {
         APITrace.begin(provider, "CloudWatch.listAlarms");
         try {
             ProviderContext ctx = provider.getContext();
@@ -160,10 +177,9 @@ public class CloudWatch extends AbstractMonitoringSupport {
             }
 
             Map<String, String> parameters = provider.getStandardCloudWatchParameters(ctx, EC2Method.DESCRIBE_ALARMS);
-
             provider.putExtraParameters(parameters, getAlarmFilterParameters(options));
+            provider.putValueIfNotNull(parameters, "NextToken", nextToken);
 
-            List<Alarm> list = new ArrayList<Alarm>();
             NodeList blocks;
             EC2Method method;
             Document doc;
@@ -186,12 +202,17 @@ public class CloudWatch extends AbstractMonitoringSupport {
                     if( metricNode.getNodeName().equals("member") ) {
                         Alarm alarm = toAlarm(metricNode);
                         if( alarm != null ) {
-                            list.add(alarm);
+                            iterator.push(alarm);
                         }
                     }
                 }
             }
-            return list;
+
+            blocks = doc.getElementsByTagName("NextToken");
+            if( blocks != null && blocks.getLength() == 1 && blocks.item(0).hasChildNodes() ) {
+                String newNextToken = AWSCloud.getTextValue(blocks.item(0));
+                populateAlarm(iterator, newNextToken, options);
+            }
 
         } finally {
             APITrace.end();
