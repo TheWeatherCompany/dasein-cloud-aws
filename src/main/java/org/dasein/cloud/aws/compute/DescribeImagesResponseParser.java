@@ -344,6 +344,7 @@ public class DescribeImagesResponseParser implements XmlStreamParser<MachineImag
         String value = null;
         Collection<MachineImageVolume> volumes = new ArrayList<MachineImageVolume>();
         MachineImageVolume volume = null;
+        boolean ephemeral = false;
         while( parser.hasNext() ) {
             int event = parser.next();
             switch (event) {
@@ -352,8 +353,9 @@ public class DescribeImagesResponseParser implements XmlStreamParser<MachineImag
                     break;
                 case XMLStreamConstants.START_ELEMENT:
                     if( "item".equalsIgnoreCase(parser.getLocalName()) ) {
-                        if (volume != null) volumes.add(volume);
+                        if (volume != null && !ephemeral) volumes.add(volume);
                         volume = new MachineImageVolume();
+                        ephemeral = false;
                     }
                     break;
                 case XMLStreamConstants.END_ELEMENT:
@@ -374,8 +376,11 @@ public class DescribeImagesResponseParser implements XmlStreamParser<MachineImag
                     else if("iops".equalsIgnoreCase(name)) {
                         volume.setIops(Integer.valueOf(value));
                     }
+                    else if("virtualName".equalsIgnoreCase(name)) {
+                        ephemeral = true;
+                    }
                     else if("blockDeviceMapping".equalsIgnoreCase(name)) {
-                        volumes.add(volume);
+                        if (!ephemeral) volumes.add(volume);
                         return volumes;
                     }
                     break;
