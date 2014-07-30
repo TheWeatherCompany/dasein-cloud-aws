@@ -1624,8 +1624,10 @@ public class AMI extends AbstractImageSupport {
                     for (int z = 0; z < devices.getLength(); z++) {
                         NodeList param = devices.item(z).getChildNodes();
                         MachineImageVolume volume = new MachineImageVolume();
+                        boolean ephemeral;
 
                         if (devices.item(z).getNodeName().equalsIgnoreCase("item")) {
+                            ephemeral = false;
                             for (int j = 0; j < param.getLength(); j++) {
                                 String nodeName = param.item(j).getNodeName();
 
@@ -1647,12 +1649,14 @@ public class AMI extends AbstractImageSupport {
                                             volume.setIops(Integer.valueOf(ebs.item(k).getFirstChild().getNodeValue().trim()));
                                         }
                                     }
+                                } else if (nodeName.equalsIgnoreCase("virtualName")) {
+                                    ephemeral = true;
                                 }
                             }
 
-                            if (volume.getDeviceName() != null || volume.getIops() != null
+                            if (!ephemeral && (volume.getDeviceName() != null || volume.getIops() != null
                                     || volume.getDeviceName() != null || volume.getVolumeSize() != null
-                                    || volume.getVolumeType() != null) {
+                                    || volume.getVolumeType() != null)) {
                                 volumes.add(volume);
                             }
                         }
