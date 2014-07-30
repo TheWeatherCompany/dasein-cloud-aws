@@ -137,6 +137,7 @@ public class DescribeImagesResponseParser implements XmlStreamParser<MachineImag
         String imageName = null;
         String description = null;
         boolean itemEnd = false;
+        Collection<MachineImageVolume> volumes = null;
 
         String value = null;
         for( int event = parser.next(); event != XMLStreamConstants.END_DOCUMENT && !itemEnd; event = parser.next() ) {
@@ -154,6 +155,9 @@ public class DescribeImagesResponseParser implements XmlStreamParser<MachineImag
                     }
                     else if( "item".equalsIgnoreCase(name) ) {
                         itemDepth++;
+                    }
+                    else if("blockDeviceMapping".equals(name)) {
+                        volumes = readVolumes(parser);
                     }
                     break;
 
@@ -291,6 +295,9 @@ public class DescribeImagesResponseParser implements XmlStreamParser<MachineImag
         if( imageType != null ) {
             image.setType(imageType);
         }
+        if(volumes != null) {
+            image.setVolumes(volumes);
+        }
         image.setTags(tags);
         return image;
     }
@@ -331,6 +338,50 @@ public class DescribeImagesResponseParser implements XmlStreamParser<MachineImag
                     break;
             }
         }
+    }
+
+    private Collection<MachineImageVolume> readVolumes(XMLStreamReader parser) throws XMLStreamException {
+        String value = null;
+        Collection<MachineImageVolume> volumes = new ArrayList<MachineImageVolume>();
+        MachineImageVolume volume = null;
+        while( parser.hasNext() ) {
+            int event = parser.next();
+            switch (event) {
+                case XMLStreamConstants.CHARACTERS:
+                    value = parser.getText().trim();
+                    break;
+                case XMLStreamConstants.START_ELEMENT:
+                    if( "item".equalsIgnoreCase(parser.getLocalName()) ) {
+                        if (volume != null) volumes.add(volume);
+                        volume = new MachineImageVolume();
+                    }
+                    break;
+                case XMLStreamConstants.END_ELEMENT:
+                    String name = parser.getLocalName();
+                    if (volume == null) break;
+                    if("deviceName".equalsIgnoreCase(name)) {
+                        volume.setDeviceName(value);
+                    }
+                    else if("snapshotId".equalsIgnoreCase(name)) {
+                        volume.setSnapshotId(value);
+                    }
+                    else if("volumeSize".equalsIgnoreCase(name)) {
+                        volume.setVolumeSize(Integer.valueOf(value));
+                    }
+                    else if("volumeType".equalsIgnoreCase(name)) {
+                        volume.setVolumeType(value);
+                    }
+                    else if("iops".equalsIgnoreCase(name)) {
+                        volume.setIops(Integer.valueOf(value));
+                    }
+                    else if("blockDeviceMapping".equalsIgnoreCase(name)) {
+                        volumes.add(volume);
+                        return volumes;
+                    }
+                    break;
+            }
+        }
+        return volumes;
     }
 
     private String readStateReason( XMLStreamReader parser ) throws XMLStreamException {
