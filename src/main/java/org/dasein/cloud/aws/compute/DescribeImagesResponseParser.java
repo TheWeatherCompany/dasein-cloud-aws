@@ -121,7 +121,7 @@ public class DescribeImagesResponseParser implements XmlStreamParser<MachineImag
     }
 
     private @Nullable MachineImage readItem(@Nullable XMLStreamReader parser) throws CloudException, InternalException, XMLStreamException {
-        if( parser == null ) {
+        if( parser == null || !parser.hasNext()) {
             return null;
         }
         String location = null;
@@ -245,6 +245,7 @@ public class DescribeImagesResponseParser implements XmlStreamParser<MachineImag
                     break;
                 }
             } // switch
+            if (!parser.hasNext()) break;
         } // for
 
         if( platform == null && location != null ) {
