@@ -1641,8 +1641,14 @@ public class EC2Instance extends AbstractVMSupport<AWSCloud> {
             t = new Tag();
             t.setKey("Description");
             t.setValue(cfg.getDescription());
-            toCreate[i] = t;
+            toCreate[i++] = t;
 
+            if( cfg.getVirtualMachineGroup() != null ) {
+                t = new Tag();
+                t.setKey("dsnVMGroup");
+                t.setValue(cfg.getVirtualMachineGroup());
+                toCreate[i] = t;
+            }
             getProvider().createTags(server.getProviderVirtualMachineId(), toCreate);
 
             if( !existingVolumes.isEmpty() ) {
@@ -2514,6 +2520,24 @@ public class EC2Instance extends AbstractVMSupport<AWSCloud> {
     @Override
     public void updateTags(@Nonnull String[] vmIds, @Nonnull Tag... tags) throws CloudException, InternalException {
         getProvider().createTags(vmIds, tags);
+    }
+
+    @Override
+    public void updateTags(@Nonnull String[] vmIds, boolean asynchronous, @Nonnull Tag... tags) throws CloudException, InternalException {
+        if(asynchronous) {
+            getProvider().createTags(vmIds, tags);
+        } else {
+            getProvider().createTagsSynchronously(vmIds, tags);
+        }
+    }
+
+    @Override
+    public void updateTags(@Nonnull String vmId, boolean asynchronous, @Nonnull Tag... tags) throws CloudException, InternalException {
+        if(asynchronous) {
+            getProvider().createTags(vmId, tags);
+        } else {
+            getProvider().createTagsSynchronously(vmId, tags);
+        }
     }
 
     @Override

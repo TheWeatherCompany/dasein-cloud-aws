@@ -2140,6 +2140,20 @@ public class VPC extends AbstractVLANSupport {
     }
 
     @Override
+    public void updateInternetGatewayTags(@Nonnull String[] internetGatewayIds, boolean asynchronous, @Nonnull Tag... tags) throws CloudException, InternalException {
+        if (asynchronous) {
+            provider.createTags(internetGatewayIds, tags);
+        } else {
+            provider.createTagsSynchronously(internetGatewayIds, tags);
+        }
+    }
+
+    @Override
+    public void updateInternetGatewayTags(@Nonnull String internetGatewayId, boolean asynchronous, @Nonnull Tag... tags) throws CloudException, InternalException {
+        updateInternetGatewayTags(new String[]{internetGatewayId}, asynchronous, tags);
+    }
+
+    @Override
     public void removeNetworkInterface(@Nonnull String nicId) throws CloudException, InternalException {
         APITrace.begin(provider, "VLAN.removeNetworkInterface");
         try {
@@ -2190,6 +2204,15 @@ public class VPC extends AbstractVLANSupport {
             provider.createTags(routingTableId, tags);
         } finally {
             APITrace.end();
+        }
+    }
+
+    @Override
+    public void updateRoutingTableTags(@Nonnull String routingTableId, boolean asynchronous, @Nonnull Tag... tags) throws CloudException, InternalException {
+        if (asynchronous) {
+            provider.createTags(routingTableId, tags);
+        } else {
+            provider.createTagsSynchronously(routingTableId, tags);
         }
     }
 
@@ -2540,6 +2563,7 @@ public class VPC extends AbstractVLANSupport {
                 table.setRoutes(routes.toArray(new Route[routes.size()]));
             } else if( nodeName.equalsIgnoreCase("associationSet") && child.hasChildNodes() ) {
                 ArrayList<String> associations = new ArrayList<String>();
+                boolean main = false;   //default
                 NodeList set = child.getChildNodes();
                 for( int j = 0; j < set.getLength(); j++ ) {
                     Node item = set.item(j);
@@ -2550,6 +2574,8 @@ public class VPC extends AbstractVLANSupport {
                             Node attr = attrs.item(k);
                             if( attr.getNodeName().equalsIgnoreCase("subnetId") && attr.hasChildNodes() ) {
                                 subnet = attr.getFirstChild().getNodeValue().trim();
+                            } else if(attr.getNodeName().equalsIgnoreCase("main") && attr.hasChildNodes() ) {
+                                main = main || Boolean.valueOf(attr.getFirstChild().getNodeValue().trim());
                             }
                         }
                         if( subnet != null ) {
@@ -2557,6 +2583,7 @@ public class VPC extends AbstractVLANSupport {
                         }
                     }
                 }
+                table.setMain(main);
                 table.setProviderSubnetIds(associations.toArray(new String[associations.size()]));
             } else if( nodeName.equalsIgnoreCase("tagSet") && child.hasChildNodes() ) {
                 provider.setTags(child, table);
@@ -2823,6 +2850,20 @@ public class VPC extends AbstractVLANSupport {
     @Override
     public void updateSubnetTags(@Nonnull String[] subnetIds, @Nonnull Tag... tags) throws CloudException, InternalException {
         ( (AWSCloud) getProvider() ).createTags(subnetIds, tags);
+    }
+
+    @Override
+    public void updateSubnetTags(@Nonnull String subnetId, boolean asynchronous, @Nonnull Tag... tags) throws CloudException, InternalException {
+        APITrace.begin(getProvider(), "Subnet.updateSubnetTags");
+        try {
+            if (asynchronous) {
+                ((AWSCloud) getProvider()).createTags(subnetId, tags);
+            } else {
+                ((AWSCloud) getProvider()).createTagsSynchronously(subnetId, tags);
+            }
+        } finally {
+            APITrace.end();
+        }
     }
 
     @Override
