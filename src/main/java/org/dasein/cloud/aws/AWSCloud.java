@@ -629,6 +629,10 @@ public class AWSCloud extends AbstractCloud {
         return "2009-02-01";
     }
 
+    public String getSupportVersion() {
+        return "2013-04-15";
+    }
+
     @Override
     public AWSIdentityServices getIdentityServices() {
         if( getEC2Provider().isStorage() ) {
@@ -986,6 +990,9 @@ public class AWSCloud extends AbstractCloud {
             lower.put(entry.getKey().toLowerCase(), entry.getValue());
         }
         String amzDate = headers.get(P_AWS_DATE);
+        if (amzDate == null) {
+            amzDate = lower.get(P_AWS_DATE);
+        }
         // expecting YYYYMMDDTHHMMSSZ
         if( amzDate != null ) {
             if( amzDate.length() != 16 ) {
