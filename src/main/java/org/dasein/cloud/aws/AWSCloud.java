@@ -40,6 +40,7 @@ import org.dasein.cloud.aws.compute.EC2Method;
 import org.dasein.cloud.aws.identity.AWSIdentityServices;
 import org.dasein.cloud.aws.network.EC2NetworkServices;
 import org.dasein.cloud.aws.platform.AWSPlatformServices;
+import org.dasein.cloud.aws.resource.AWSResourceServices;
 import org.dasein.cloud.aws.storage.AWSCloudStorageServices;
 import org.dasein.cloud.compute.ComputeServices;
 import org.dasein.cloud.compute.VirtualMachineSupport;
@@ -657,6 +658,11 @@ public class AWSCloud extends AbstractCloud {
             return new AWSPlatformServices(this);
         }
         return null;
+    }
+
+    @Override
+    public @Nullable AWSResourceServices getResourceServices() {
+        return new AWSResourceServices(this);
     }
 
     @Override
