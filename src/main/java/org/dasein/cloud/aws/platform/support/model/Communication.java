@@ -1,8 +1,8 @@
 
-package org.dasein.cloud.aws.resource.model;
+package org.dasein.cloud.aws.platform.support.model;
 
 import com.fasterxml.jackson.annotation.*;
-import org.dasein.cloud.resource.model.Reply;
+import org.dasein.cloud.platform.support.model.TicketReply;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -33,13 +33,13 @@ public class Communication {
     private Map<String, Object> additionalProperties = new HashMap<String, Object>();
 
     @JsonIgnore
-    public Reply buildReply() {
-        Reply reply = new Reply();
-        List<org.dasein.cloud.resource.model.Attachment> attachments = new ArrayList<org.dasein.cloud.resource.model.Attachment>();
+    public TicketReply buildReply() {
+        TicketReply reply = new TicketReply();
+        List<org.dasein.cloud.platform.support.model.TicketAttachment> attachments = new ArrayList<org.dasein.cloud.platform.support.model.TicketAttachment>();
         for(Attachment attachment: attachmentSet) {
             attachments.add(attachment.buildAttachment());
         }
-        reply.setAttachmentSet(attachments);
+        reply.setTicketAttachmentSet(attachments);
         reply.setBody(body);
         reply.setTicketId(caseId);
         reply.setSubmittedBy(submittedBy);

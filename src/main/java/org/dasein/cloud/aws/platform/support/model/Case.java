@@ -1,9 +1,8 @@
-
-package org.dasein.cloud.aws.resource.model;
+package org.dasein.cloud.aws.platform.support.model;
 
 import com.fasterxml.jackson.annotation.*;
-import org.dasein.cloud.resource.model.Reply;
-import org.dasein.cloud.resource.model.Ticket;
+import org.dasein.cloud.platform.support.model.TicketReply;
+import org.dasein.cloud.platform.support.model.Ticket;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -65,7 +64,7 @@ public class Case {
         ticket.setCcEmailAddresses(ccEmailAddresses);
         ticket.setDisplayId(displayId);
         ticket.setLanguage(language);
-        List<Reply> replies = new ArrayList<Reply>();
+        List<TicketReply> replies = new ArrayList<TicketReply>();
         for(Communication communication: recentCommunications.getCommunications()) {
             replies.add(communication.buildReply());
         }

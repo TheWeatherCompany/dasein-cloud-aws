@@ -1,4 +1,4 @@
-package org.dasein.cloud.aws.resource.model;
+package org.dasein.cloud.aws.platform.support.model;
 
 import java.util.List;
 

@@ -1,5 +1,5 @@
 
-package org.dasein.cloud.aws.resource.model;
+package org.dasein.cloud.aws.platform.support.model;
 
 import com.fasterxml.jackson.annotation.*;
 
@@ -10,26 +10,26 @@ import java.util.Map;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({
-        "communications",
+        "cases",
         "nextToken"
 })
-public class RecentCommunications {
+public class CaseDetails {
 
-    @JsonProperty("communications")
-    private List<Communication> communications = new ArrayList<Communication>();
+    @JsonProperty("cases")
+    private List<Case> cases = new ArrayList<Case>();
     @JsonProperty(value = "nextToken")
     String nextToken;
     @JsonIgnore
     private Map<String, Object> additionalProperties = new HashMap<String, Object>();
 
-    @JsonProperty("communications")
-    public List<Communication> getCommunications() {
-        return communications;
+    @JsonProperty("cases")
+    public List<Case> getCases() {
+        return cases;
     }
 
-    @JsonProperty("communications")
-    public void setCommunications(List<Communication> communications) {
-        this.communications = communications;
+    @JsonProperty("cases")
+    public void setCases(List<Case> cases) {
+        this.cases = cases;
     }
 
     @JsonProperty(value = "nextToken")

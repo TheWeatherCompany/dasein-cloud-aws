@@ -1,4 +1,4 @@
-package org.dasein.cloud.aws.resource.model;
+package org.dasein.cloud.aws.platform.support.model;
 
 import com.fasterxml.jackson.annotation.*;
 
@@ -24,8 +24,8 @@ public class Attachment {
     private Map<String, Object> additionalProperties = new HashMap<String, Object>();
 
     @JsonIgnore
-    public org.dasein.cloud.resource.model.Attachment buildAttachment() {
-        org.dasein.cloud.resource.model.Attachment attachment = new org.dasein.cloud.resource.model.Attachment();
+    public org.dasein.cloud.platform.support.model.TicketAttachment buildAttachment() {
+        org.dasein.cloud.platform.support.model.TicketAttachment attachment = new org.dasein.cloud.platform.support.model.TicketAttachment();
         attachment.setAttachmentId(attachmentId);
         attachment.setFileName(fileName);
         return attachment;
