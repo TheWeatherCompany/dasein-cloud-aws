@@ -1,9 +1,9 @@
-package org.dasein.cloud.aws.resource.model.options;
+package org.dasein.cloud.aws.platform.support.model.options;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import org.dasein.cloud.resource.model.options.TicketListServicesOptions;
+import org.dasein.cloud.platform.support.model.options.TicketListServicesOptions;
 
 import java.util.Collection;
 
@@ -12,7 +12,7 @@ import java.util.Collection;
  * @since 18.08.2014
  */
 @JsonInclude(Include.NON_NULL)
-public class AWSCaseListServicesOptions {
+public class CaseListServicesOptions {
 
 //    @JsonProperty(value = "language")
 //    String language;
@@ -22,15 +22,15 @@ public class AWSCaseListServicesOptions {
 
     private TicketListServicesOptions _options;
 
-    private AWSCaseListServicesOptions() {
+    private CaseListServicesOptions() {
     }
 
-    private AWSCaseListServicesOptions(TicketListServicesOptions _options) {
+    private CaseListServicesOptions(TicketListServicesOptions _options) {
         this._options = _options;
     }
 
-    public static AWSCaseListServicesOptions getInstance(TicketListServicesOptions options) {
-       return new AWSCaseListServicesOptions(options);
+    public static CaseListServicesOptions getInstance(TicketListServicesOptions options) {
+       return new CaseListServicesOptions(options);
     }
 
     @JsonProperty(value = "language")

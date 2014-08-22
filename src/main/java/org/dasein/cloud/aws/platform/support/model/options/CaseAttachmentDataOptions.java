@@ -1,32 +1,32 @@
-package org.dasein.cloud.aws.resource.model.options;
+package org.dasein.cloud.aws.platform.support.model.options;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import org.dasein.cloud.resource.model.options.TicketAttachmentData;
+import org.dasein.cloud.platform.support.model.options.TicketAttachmentDataOptions;
 
 /**
  * @author Eugene Yaroslavtsev
  * @since 19.08.2014
  */
 @JsonInclude(Include.NON_NULL)
-public class AWSCaseAttachmentData {
+public class CaseAttachmentDataOptions {
 //    @JsonProperty("data")
 //    private String data;
 //    @JsonProperty("fileName")
 //    private String fileName;
 
-    private TicketAttachmentData _data;
+    private TicketAttachmentDataOptions _data;
 
-    private AWSCaseAttachmentData() {
+    private CaseAttachmentDataOptions() {
     }
 
-    private AWSCaseAttachmentData(TicketAttachmentData _data) {
+    private CaseAttachmentDataOptions(TicketAttachmentDataOptions _data) {
         this._data = _data;
     }
 
-    public static AWSCaseAttachmentData getInstance(TicketAttachmentData data) {
-        return new AWSCaseAttachmentData(data);
+    public static CaseAttachmentDataOptions getInstance(TicketAttachmentDataOptions data) {
+        return new CaseAttachmentDataOptions(data);
     }
 
     @JsonProperty("data")

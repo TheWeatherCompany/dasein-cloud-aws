@@ -1,15 +1,16 @@
-package org.dasein.cloud.aws.resource.model.response;
+package org.dasein.cloud.aws.platform.support.model.response;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import org.dasein.cloud.platform.support.model.TicketAttachmentData;
 
 /**
  * User: Eugene Yaroslavtsev
  * Date: 20.08.2014
  */
 @JsonInclude(Include.NON_NULL)
-public class AttachmentData {
+public class CaseAttachmentData {
 
     @JsonProperty("data")
     private String data;
@@ -19,6 +20,13 @@ public class AttachmentData {
 
     @JsonProperty(value = "__type")
     private String type;
+
+    public TicketAttachmentData build() {
+        TicketAttachmentData response = new TicketAttachmentData();
+        response.setData(data);
+        response.setFileName(fileName);
+        return response;
+    }
 
     public String getData() {
         return data;

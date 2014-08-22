@@ -1,9 +1,9 @@
-package org.dasein.cloud.aws.resource.model.options;
+package org.dasein.cloud.aws.platform.support.model.options;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import org.dasein.cloud.resource.model.options.TicketCreateReplyOptions;
+import org.dasein.cloud.platform.support.model.options.TicketCreateReplyOptions;
 
 import java.util.List;
 
@@ -12,7 +12,7 @@ import java.util.List;
  * @since 18.08.2014
  */
 @JsonInclude(Include.NON_NULL)
-public class AWSCaseCreateReplyOptions {
+public class CaseCreateReplyOptions {
 
 //    @JsonProperty("attachmentSetId")
 //    private String attachmentSetId;
@@ -25,15 +25,15 @@ public class AWSCaseCreateReplyOptions {
 
     private TicketCreateReplyOptions _options;
 
-    private AWSCaseCreateReplyOptions() {
+    private CaseCreateReplyOptions() {
     }
 
-    private AWSCaseCreateReplyOptions(TicketCreateReplyOptions _options) {
+    private CaseCreateReplyOptions(TicketCreateReplyOptions _options) {
         this._options = _options;
     }
 
-    public static AWSCaseCreateReplyOptions getInstance(TicketCreateReplyOptions options) {
-        return new AWSCaseCreateReplyOptions(options);
+    public static CaseCreateReplyOptions getInstance(TicketCreateReplyOptions options) {
+        return new CaseCreateReplyOptions(options);
     }
 
     @JsonProperty("attachmentSetId")

@@ -1,4 +1,4 @@
-package org.dasein.cloud.aws.resource.model.response;
+package org.dasein.cloud.aws.platform.support.model.response;
 
 import com.fasterxml.jackson.annotation.*;
 
@@ -10,7 +10,7 @@ import java.util.Map;
  * @since 18.08.2014
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class ErrorResponse {
+public class CaseErrorResponse {
 
     @JsonProperty(value = "__type")
     private String type;

@@ -1,13 +1,13 @@
-package org.dasein.cloud.aws.resource.model.options;
+package org.dasein.cloud.aws.platform.support.model.options;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import org.dasein.cloud.resource.model.options.TicketGetOptions;
-import org.dasein.cloud.resource.model.options.TicketListAttachmentsOptions;
-import org.dasein.cloud.resource.model.options.TicketListOptions;
-import org.dasein.cloud.resource.model.options.TicketListRepliesOptions;
+import org.dasein.cloud.platform.support.model.options.TicketGetOptions;
+import org.dasein.cloud.platform.support.model.options.TicketListAttachmentsOptions;
+import org.dasein.cloud.platform.support.model.options.TicketListOptions;
+import org.dasein.cloud.platform.support.model.options.TicketListRepliesOptions;
 
 import java.util.Arrays;
 import java.util.List;
@@ -17,7 +17,7 @@ import java.util.List;
  * @since 14.08.2014
  */
 @JsonInclude(Include.NON_NULL)
-public class AWSCaseListOptions {
+public class CaseListOptions {
 
 //    @JsonProperty(value = "afterTime")
 //    String afterTime;
@@ -41,33 +41,33 @@ public class AWSCaseListOptions {
     @JsonIgnore
     private TicketListOptions _options;
 
-    private AWSCaseListOptions() {
+    private CaseListOptions() {
     }
 
-    private AWSCaseListOptions(TicketListOptions _options) {
+    private CaseListOptions(TicketListOptions _options) {
         this._options = _options;
     }
 
-    public static AWSCaseListOptions getInstance(TicketListOptions options) {
-       return new AWSCaseListOptions(options);
+    public static CaseListOptions getInstance(TicketListOptions options) {
+       return new CaseListOptions(options);
     }
 
-    public static AWSCaseListOptions getInstance(TicketGetOptions options) {
+    public static CaseListOptions getInstance(TicketGetOptions options) {
         return setId(options.getTicketId());
     }
 
-    public static AWSCaseListOptions getInstance(TicketListRepliesOptions options) {
+    public static CaseListOptions getInstance(TicketListRepliesOptions options) {
         return setId(options.getTicketId());
     }
 
-    public static AWSCaseListOptions getInstance(TicketListAttachmentsOptions options) {
+    public static CaseListOptions getInstance(TicketListAttachmentsOptions options) {
         return setId(options.getTicketId());
     }
 
-    private static AWSCaseListOptions setId(String id) {
+    private static CaseListOptions setId(String id) {
         TicketListOptions ticketListOptions = new TicketListOptions();
         ticketListOptions.setCaseIdList(Arrays.asList(id));
-        return new AWSCaseListOptions(ticketListOptions);
+        return new CaseListOptions(ticketListOptions);
     }
 
     @JsonProperty(value = "afterTime")

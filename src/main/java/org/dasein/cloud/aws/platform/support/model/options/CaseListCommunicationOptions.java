@@ -1,10 +1,10 @@
-package org.dasein.cloud.aws.resource.model.options;
+package org.dasein.cloud.aws.platform.support.model.options;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-import org.dasein.cloud.resource.model.options.TicketListRepliesOptions;
+import org.dasein.cloud.platform.support.model.options.TicketListRepliesOptions;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -21,7 +21,7 @@ import java.util.Map;
         "MaxResults",
         "NextToken"
 })
-public class AWSCaseListCommunicationOptions {
+public class CaseListCommunicationOptions {
 
 //    @JsonProperty("AfterTime")
 //    private String afterTime;
@@ -39,15 +39,15 @@ public class AWSCaseListCommunicationOptions {
     @JsonIgnore
     private TicketListRepliesOptions _options;
 
-    private AWSCaseListCommunicationOptions() {
+    private CaseListCommunicationOptions() {
     }
 
-    private AWSCaseListCommunicationOptions(TicketListRepliesOptions _options) {
+    private CaseListCommunicationOptions(TicketListRepliesOptions _options) {
         this._options = _options;
     }
 
-    public static AWSCaseListCommunicationOptions getInstance(TicketListRepliesOptions options){
-        return new AWSCaseListCommunicationOptions(options);
+    public static CaseListCommunicationOptions getInstance(TicketListRepliesOptions options){
+        return new CaseListCommunicationOptions(options);
     }
 
     @JsonProperty("afterTime")

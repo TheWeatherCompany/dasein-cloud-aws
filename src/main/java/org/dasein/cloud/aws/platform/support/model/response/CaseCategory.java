@@ -1,4 +1,4 @@
-package org.dasein.cloud.aws.resource.model.response;
+package org.dasein.cloud.aws.platform.support.model.response;
 
 import com.fasterxml.jackson.annotation.*;
 
@@ -14,7 +14,7 @@ import java.util.Map;
         "code",
         "name"
 })
-public class Category {
+public class CaseCategory {
 
     @JsonProperty("code")
     private String code;
@@ -24,8 +24,8 @@ public class Category {
     private Map<String, Object> additionalProperties = new HashMap<String, Object>();
 
     @JsonIgnore
-    public org.dasein.cloud.resource.model.Category build() {
-        org.dasein.cloud.resource.model.Category category = new org.dasein.cloud.resource.model.Category();
+    public org.dasein.cloud.platform.support.model.TicketCategory build() {
+        org.dasein.cloud.platform.support.model.TicketCategory category = new org.dasein.cloud.platform.support.model.TicketCategory();
         category.setName(name);
         category.setCode(code);
         return category;

@@ -1,4 +1,4 @@
-package org.dasein.cloud.aws.resource.model.response;
+package org.dasein.cloud.aws.platform.support.model.response;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
@@ -9,7 +9,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * @since 18.08.2014
  */
 @JsonInclude(Include.NON_NULL)
-public class CreateReplyResponse {
+public class CaseCreateReplyResponse {
     @JsonProperty(value = "result")
     String result;
 

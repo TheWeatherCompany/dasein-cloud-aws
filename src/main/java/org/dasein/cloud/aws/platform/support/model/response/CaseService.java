@@ -1,4 +1,4 @@
-package org.dasein.cloud.aws.resource.model.response;
+package org.dasein.cloud.aws.platform.support.model.response;
 
 import com.fasterxml.jackson.annotation.*;
 
@@ -18,12 +18,12 @@ import java.util.Map;
         "code",
         "name"
 })
-public class Service {
+public class CaseService {
 
     @JsonProperty("__type")
     private String type;
     @JsonProperty("categories")
-    private List<Category> categories = new ArrayList<Category>();
+    private List<CaseCategory> categories = new ArrayList<CaseCategory>();
     @JsonProperty("code")
     private String code;
     @JsonProperty("name")
@@ -32,13 +32,13 @@ public class Service {
     private Map<String, Object> additionalProperties = new HashMap<String, Object>();
 
     @JsonIgnore
-    public org.dasein.cloud.resource.model.Service buildService() {
-        org.dasein.cloud.resource.model.Service service = new org.dasein.cloud.resource.model.Service();
+    public org.dasein.cloud.platform.support.model.TicketService buildService() {
+        org.dasein.cloud.platform.support.model.TicketService service = new org.dasein.cloud.platform.support.model.TicketService();
         service.setCode(code);
         service.setName(name);
-        List<org.dasein.cloud.resource.model.Category> list = new ArrayList<org.dasein.cloud.resource.model.Category>();
-        for(Category category: categories) {
-            list.add(category.build());
+        List<org.dasein.cloud.platform.support.model.TicketCategory> list = new ArrayList<org.dasein.cloud.platform.support.model.TicketCategory>();
+        for(CaseCategory caseCategory : categories) {
+            list.add(caseCategory.build());
         }
         service.setCategories(list);
         return service;
@@ -55,12 +55,12 @@ public class Service {
     }
 
     @JsonProperty("categories")
-    public List<Category> getCategories() {
+    public List<CaseCategory> getCategories() {
         return categories;
     }
 
     @JsonProperty("categories")
-    public void setCategories(List<Category> categories) {
+    public void setCategories(List<CaseCategory> categories) {
         this.categories = categories;
     }
 

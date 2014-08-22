@@ -1,9 +1,9 @@
-package org.dasein.cloud.aws.resource.model.options;
+package org.dasein.cloud.aws.platform.support.model.options;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import org.dasein.cloud.resource.model.options.TicketCreateOptions;
+import org.dasein.cloud.platform.support.model.options.TicketCreateOptions;
 
 import java.util.Collection;
 
@@ -12,7 +12,7 @@ import java.util.Collection;
  * @since 15.08.2014
  */
 @JsonInclude(Include.NON_NULL)
-public class AWSCaseCreateOptions {
+public class CaseCreateOptions {
 
 //    @JsonProperty(value = "attachmentSetId")
 //    String attachmentSetId;
@@ -43,15 +43,15 @@ public class AWSCaseCreateOptions {
 
     private TicketCreateOptions _options;
 
-    private AWSCaseCreateOptions() {
+    private CaseCreateOptions() {
     }
 
-    private AWSCaseCreateOptions(TicketCreateOptions options) {
+    private CaseCreateOptions(TicketCreateOptions options) {
         this._options = options;
     }
 
-    public static AWSCaseCreateOptions getInstance(TicketCreateOptions options) {
-       return new AWSCaseCreateOptions(options);
+    public static CaseCreateOptions getInstance(TicketCreateOptions options) {
+       return new CaseCreateOptions(options);
     }
     @JsonProperty(value = "attachmentSetId")
     public String getAttachmentSetId() {

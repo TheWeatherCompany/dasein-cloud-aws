@@ -1,10 +1,9 @@
-package org.dasein.cloud.aws.resource.model.response;
+package org.dasein.cloud.aws.platform.support.model.response;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-import org.dasein.cloud.resource.model.AttachmentData;
 
 /**
  * @author Eugene Yaroslavtsev
@@ -14,16 +13,16 @@ import org.dasein.cloud.resource.model.AttachmentData;
 @JsonPropertyOrder({
         "attachment"
 })
-public class AttachmentResponse {
+public class CaseAttachmentResponse {
 
     @JsonProperty("attachment")
-    private AttachmentData attachment;
+    private CaseAttachmentData attachment;
 
-    public AttachmentData getAttachment() {
+    public CaseAttachmentData getAttachment() {
         return attachment;
     }
 
-    public void setAttachment(AttachmentData attachment) {
+    public void setAttachment(CaseAttachmentData attachment) {
         this.attachment = attachment;
     }
 

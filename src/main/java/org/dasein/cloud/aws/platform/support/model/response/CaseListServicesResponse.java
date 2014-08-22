@@ -1,4 +1,4 @@
-package org.dasein.cloud.aws.resource.model.response;
+package org.dasein.cloud.aws.platform.support.model.response;
 
 import com.fasterxml.jackson.annotation.*;
 
@@ -15,21 +15,21 @@ import java.util.Map;
 @JsonPropertyOrder({
         "services"
 })
-public class ListServicesResponse {
+public class CaseListServicesResponse {
 
     @JsonProperty("services")
-    private List<Service> services = new ArrayList<Service>();
+    private List<CaseService> caseServices = new ArrayList<CaseService>();
     @JsonIgnore
     private Map<String, Object> additionalProperties = new HashMap<String, Object>();
 
     @JsonProperty("services")
-    public List<Service> getServices() {
-        return services;
+    public List<CaseService> getCaseServices() {
+        return caseServices;
     }
 
     @JsonProperty("services")
-    public void setServices(List<Service> services) {
-        this.services = services;
+    public void setCaseServices(List<CaseService> caseServices) {
+        this.caseServices = caseServices;
     }
 
     @JsonAnyGetter
