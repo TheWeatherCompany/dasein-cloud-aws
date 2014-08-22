@@ -110,7 +110,9 @@ public class CaseSupport extends AbstractTicketService {
         APITrace.begin(provider, "Support.getTicket");
         try {
             Case caze = getCase(CaseListOptions.getInstance(options));
-            return caze.buildTicket();
+            Ticket ticket = caze.buildTicket();
+            ticket = fillTicketReplies(ticket);
+            return ticket;
         } finally {
             APITrace.end();
         }
@@ -241,6 +243,14 @@ public class CaseSupport extends AbstractTicketService {
         }
     }
 
+    /**
+     * Returns single case, otherwise throws exception
+     *
+     * @param options the specified options
+     * @return case
+     * @throws InternalException
+     * @throws CloudException
+     */
     private Case getCase(CaseListOptions options) throws InternalException, CloudException {
         CaseSupportMethod method = new CaseSupportMethod(provider, CaseSupportTarget.DESCRIBE_CASES);
 
@@ -317,7 +327,8 @@ public class CaseSupport extends AbstractTicketService {
                 String result = method.invoke(new ObjectMapper().writeValueAsString(options));
                 CaseDetails caseDetails = new ObjectMapper().readValue(result, CaseDetails.class);
                 for (Case caze : caseDetails.getCases()) {
-                    ticketJiterator.push(caze.buildTicket());
+                    Ticket ticket = fillTicketReplies(caze.buildTicket());
+                    ticketJiterator.push(ticket);
                 }
                 if (caseDetails.getNextToken() != null) {
                     options.setNextToken(caseDetails.getNextToken());
@@ -333,6 +344,21 @@ public class CaseSupport extends AbstractTicketService {
         } finally {
             APITrace.end();
         }
+    }
+
+    /**
+     * Fills replies in ticket
+     *
+     * @param ticket ticket
+     * @return incoming ticket with replies
+     * @throws InternalException
+     * @throws CloudException
+     */
+    private Ticket fillTicketReplies(Ticket ticket) throws InternalException, CloudException {
+        TicketListRepliesOptions options = new TicketListRepliesOptions();
+        options.setTicketId(ticket.getTicketId());
+        ticket.setRecentReplies(new ArrayList<TicketReply>(listReplies(options)));
+        return ticket;
     }
 
 }
