@@ -20,11 +20,12 @@
 package org.dasein.cloud.aws.platform;
 
 import org.dasein.cloud.aws.AWSCloud;
+import org.dasein.cloud.aws.platform.support.CaseSupport;
 import org.dasein.cloud.platform.AbstractPlatformServices;
 import org.dasein.cloud.platform.MonitoringSupport;
+import org.dasein.cloud.platform.support.TicketService;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 
 public class AWSPlatformServices extends AbstractPlatformServices {
     private AWSCloud cloud;
@@ -56,4 +57,8 @@ public class AWSPlatformServices extends AbstractPlatformServices {
       return new CloudWatch( cloud );
     }
 
+    @Override
+    public @Nonnull TicketService getSupportService() {
+        return new CaseSupport( cloud );
+    }
 }

@@ -1,10 +1,10 @@
-package org.dasein.cloud.aws.resource;
+package org.dasein.cloud.aws.platform.support;
 
 /**
  * User: Eugene Yaroslavtsev
  * Date: 21.08.2014
  */
-public enum SupportTarget {
+public enum CaseSupportTarget {
 
     DESCRIBE_CASES("AWSSupport_20130415.DescribeCases"),
     DESCRIBE_ATTACHMENT("AWSSupport_20130415.DescribeAttachment"),
@@ -17,7 +17,7 @@ public enum SupportTarget {
     ;
     private String target;
 
-    SupportTarget(String target) {
+    CaseSupportTarget(String target) {
         this.target = target;
     }
 

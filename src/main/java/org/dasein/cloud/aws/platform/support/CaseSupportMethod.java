@@ -1,4 +1,4 @@
-package org.dasein.cloud.aws.resource;
+package org.dasein.cloud.aws.platform.support;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.http.HttpResponse;
@@ -10,7 +10,7 @@ import org.dasein.cloud.CloudErrorType;
 import org.dasein.cloud.CloudException;
 import org.dasein.cloud.InternalException;
 import org.dasein.cloud.aws.AWSCloud;
-import org.dasein.cloud.aws.resource.model.response.ErrorResponse;
+import org.dasein.cloud.aws.platform.support.model.response.CaseErrorResponse;
 import org.dasein.cloud.aws.storage.Glacier;
 
 import javax.servlet.http.HttpServletResponse;
@@ -25,18 +25,18 @@ import java.util.Map.Entry;
  * @author Eugene Yaroslavtsev
  * @since 13.08.2014
  */
-public class SupportMethod {
+public class CaseSupportMethod {
 
-    private static final Logger logger = Logger.getLogger(SupportMethod.class);
+    private static final Logger logger = Logger.getLogger(CaseSupportMethod.class);
     private static final Logger wire = AWSCloud.getWireLogger(Glacier.class);
     private static final String URL = "https://support.us-east-1.amazonaws.com";
     private static final String CONTENT_TYPE = "application/x-amz-json-1.1";
     private static final String service = "support";
     private static String bodyText = "{}";
     private AWSCloud provider;
-    private SupportTarget AMZ_TARGET;
+    private CaseSupportTarget AMZ_TARGET;
 
-    public SupportMethod(AWSCloud provider, SupportTarget target) {
+    public CaseSupportMethod(AWSCloud provider, CaseSupportTarget target) {
         this.provider = provider;
         this.AMZ_TARGET = target;
     }
@@ -117,8 +117,8 @@ public class SupportMethod {
                     String code = "0"; //todo
                     String message;
                     try {
-                        ErrorResponse errorResponse = new ObjectMapper().readValue(getContent(response.getEntity().getContent()), ErrorResponse.class);
-                        message = errorResponse.getMessage();
+                        CaseErrorResponse caseErrorResponse = new ObjectMapper().readValue(getContent(response.getEntity().getContent()), CaseErrorResponse.class);
+                        message = caseErrorResponse.getMessage();
                     } catch (CloudException e) {
                         logger.error(e);
                         message = e.getMessage();
