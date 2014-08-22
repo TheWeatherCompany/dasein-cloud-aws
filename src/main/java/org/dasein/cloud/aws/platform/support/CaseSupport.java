@@ -242,23 +242,19 @@ public class CaseSupport extends AbstractTicketService {
     }
 
     private Case getCase(CaseListOptions options) throws InternalException, CloudException {
-        List<Case> cases = getCases(options);
-        if (cases == null) {
-            throw new CloudException("Response did not include any cases");
-        } else if (cases.size() != 1) {
-            throw new CloudException("Response include wrong amount of case [" + cases.size() + "]");
-        } else {
-            return cases.get(0);
-        }
-    }
-
-    private List<Case> getCases(CaseListOptions options) throws InternalException, CloudException {
         CaseSupportMethod method = new CaseSupportMethod(provider, CaseSupportTarget.DESCRIBE_CASES);
 
         try {
             String result = method.invoke(new ObjectMapper().writeValueAsString(options));
             CaseDetails caseDetails = new ObjectMapper().readValue(result, CaseDetails.class);
-            return caseDetails.getCases();
+            List<Case> cases = caseDetails.getCases();
+            if (cases == null) {
+                throw new CloudException("Response did not include any cases");
+            } else if (cases.size() != 1) {
+                throw new CloudException("Response include wrong amount of case [" + cases.size() + "]");
+            } else {
+                return cases.get(0);
+            }
         } catch (JsonProcessingException e) {
             logger.error(e);
             throw new CloudException("Unable to process parameters" + e.getMessage());
@@ -266,6 +262,7 @@ public class CaseSupport extends AbstractTicketService {
             logger.error(e);
             throw new CloudException(e);
         }
+
     }
 
     /**

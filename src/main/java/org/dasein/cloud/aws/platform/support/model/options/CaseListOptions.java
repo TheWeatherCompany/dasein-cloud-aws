@@ -116,6 +116,11 @@ public class CaseListOptions {
     }
 
     @JsonIgnore
+    public TicketListOptions getInOptions() {
+        return _options;
+    }
+
+    @JsonIgnore
     public void setNextToken(String nextToken) {
         _options.setNextToken(nextToken);
     }
