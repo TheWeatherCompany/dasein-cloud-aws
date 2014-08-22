@@ -32,7 +32,7 @@ public class CaseAttachmentsListOptions {
     public static CaseAttachmentsListOptions getInstance(TicketGetAttachmetnOptions options) {
         TicketAttachmentsListOptions ticketAttachmentsListOptions = new TicketAttachmentsListOptions();
         ticketAttachmentsListOptions.setAttachmentId(options.getAttachmentId());
-        return new CaseAttachmentsListOptions();
+        return new CaseAttachmentsListOptions(ticketAttachmentsListOptions);
     }
 
     @JsonProperty(value = "attachmentId")

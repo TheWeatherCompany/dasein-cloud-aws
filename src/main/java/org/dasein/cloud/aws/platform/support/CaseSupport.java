@@ -8,10 +8,7 @@ import org.dasein.cloud.CloudErrorType;
 import org.dasein.cloud.CloudException;
 import org.dasein.cloud.InternalException;
 import org.dasein.cloud.aws.AWSCloud;
-import org.dasein.cloud.aws.platform.support.model.Case;
-import org.dasein.cloud.aws.platform.support.model.CaseDetails;
-import org.dasein.cloud.aws.platform.support.model.Communication;
-import org.dasein.cloud.aws.platform.support.model.RecentCommunications;
+import org.dasein.cloud.aws.platform.support.model.*;
 import org.dasein.cloud.aws.platform.support.model.options.*;
 import org.dasein.cloud.aws.platform.support.model.response.*;
 import org.dasein.cloud.platform.support.AbstractTicketService;
@@ -228,11 +225,15 @@ public class CaseSupport extends AbstractTicketService {
         try {
             CaseSupportMethod method = new CaseSupportMethod(provider, CaseSupportTarget.ADD_ATTACHMENTS_TO_SET);
             try {
-                String attachmentSetId = method.invoke(new ObjectMapper().writeValueAsString(CaseCreateAttachmentsOptions.getInstance(options)));
+                String attachmentSetResponse = method.invoke(new ObjectMapper().writeValueAsString(CaseCreateAttachmentsOptions.getInstance(options)));
+                String attachmentSetId = new ObjectMapper().readValue(attachmentSetResponse, CaseSetAttachmentResponse.class).getAttachmentSetId();
+
                 TicketCreateReplyOptions createOptions = new TicketCreateReplyOptions();
                 createOptions.setCaseId(options.getTicketId());
                 createOptions.setAttachmentSetId(attachmentSetId);
+                createOptions.setCommunicationBody("attachment file(s)");
                 createReply(createOptions);
+
                 return attachmentSetId;
             } catch (IOException e) {
                 logger.error(e);
