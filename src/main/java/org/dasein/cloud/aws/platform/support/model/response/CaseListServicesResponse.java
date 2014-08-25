@@ -18,18 +18,18 @@ import java.util.Map;
 public class CaseListServicesResponse {
 
     @JsonProperty("services")
-    private List<CaseService> caseServices = new ArrayList<CaseService>();
+    private List<CaseServiceResponse> caseServiceResponses = new ArrayList<CaseServiceResponse>();
     @JsonIgnore
     private Map<String, Object> additionalProperties = new HashMap<String, Object>();
 
     @JsonProperty("services")
-    public List<CaseService> getCaseServices() {
-        return caseServices;
+    public List<CaseServiceResponse> getCaseServiceResponses() {
+        return caseServiceResponses;
     }
 
     @JsonProperty("services")
-    public void setCaseServices(List<CaseService> caseServices) {
-        this.caseServices = caseServices;
+    public void setCaseServiceResponses(List<CaseServiceResponse> caseServiceResponses) {
+        this.caseServiceResponses = caseServiceResponses;
     }
 
     @JsonAnyGetter

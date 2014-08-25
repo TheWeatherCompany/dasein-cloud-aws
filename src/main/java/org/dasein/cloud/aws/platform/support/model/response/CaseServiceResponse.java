@@ -18,12 +18,12 @@ import java.util.Map;
         "code",
         "name"
 })
-public class CaseService {
+public class CaseServiceResponse {
 
     @JsonProperty("__type")
     private String type;
     @JsonProperty("categories")
-    private List<CaseCategory> categories = new ArrayList<CaseCategory>();
+    private List<CaseCategoryResponse> categories = new ArrayList<CaseCategoryResponse>();
     @JsonProperty("code")
     private String code;
     @JsonProperty("name")
@@ -37,8 +37,8 @@ public class CaseService {
         service.setCode(code);
         service.setName(name);
         List<org.dasein.cloud.platform.support.model.TicketCategory> list = new ArrayList<org.dasein.cloud.platform.support.model.TicketCategory>();
-        for(CaseCategory caseCategory : categories) {
-            list.add(caseCategory.build());
+        for(CaseCategoryResponse caseCategoryResponse : categories) {
+            list.add(caseCategoryResponse.build());
         }
         service.setCategories(list);
         return service;
@@ -55,12 +55,12 @@ public class CaseService {
     }
 
     @JsonProperty("categories")
-    public List<CaseCategory> getCategories() {
+    public List<CaseCategoryResponse> getCategories() {
         return categories;
     }
 
     @JsonProperty("categories")
-    public void setCategories(List<CaseCategory> categories) {
+    public void setCategories(List<CaseCategoryResponse> categories) {
         this.categories = categories;
     }
 

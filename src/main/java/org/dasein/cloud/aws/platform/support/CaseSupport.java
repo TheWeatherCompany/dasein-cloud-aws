@@ -143,7 +143,7 @@ public class CaseSupport extends AbstractTicketService {
             CaseSupportMethod method = new CaseSupportMethod(provider, CaseSupportTarget.DESCRIBE_ATTACHMENT);
             try {
                 String result = method.invoke(new ObjectMapper().writeValueAsString(CaseAttachmentsListOptions.getInstance(options)));
-                return new ObjectMapper().readValue(result, CaseAttachmentResponse.class).getAttachment().build();
+                return new ObjectMapper().readValue(result, CaseAttachmentResponse.class).getAttachment().buildAttachmentData();
             } catch (JsonProcessingException e) {
                 logger.error(e);
                 throw new CloudException("Unable to process parameters" + e.getMessage());
@@ -183,10 +183,10 @@ public class CaseSupport extends AbstractTicketService {
             CaseSupportMethod method = new CaseSupportMethod(provider, CaseSupportTarget.DESCRIBE_SERVICES);
             try {
                 String result = method.invoke(new ObjectMapper().writeValueAsString(CaseListServicesOptions.getInstance(options)));
-                List<CaseService> caseServices = new ObjectMapper().readValue(result, CaseListServicesResponse.class).getCaseServices();
+                List<CaseServiceResponse> caseServiceResponses = new ObjectMapper().readValue(result, CaseListServicesResponse.class).getCaseServiceResponses();
                 List<TicketService> listResult = new ArrayList<TicketService>();
-                for (CaseService caseService : caseServices) {
-                    listResult.add(caseService.buildService());
+                for (CaseServiceResponse caseServiceResponse : caseServiceResponses) {
+                    listResult.add(caseServiceResponse.buildService());
                 }
                 return listResult;
             } catch (IOException e) {

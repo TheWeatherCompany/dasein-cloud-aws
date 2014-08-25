@@ -14,7 +14,7 @@ import java.util.Map;
         "code",
         "name"
 })
-public class CaseCategory {
+public class CaseCategoryResponse {
 
     @JsonProperty("code")
     private String code;
