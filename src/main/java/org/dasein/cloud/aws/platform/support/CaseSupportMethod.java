@@ -28,7 +28,7 @@ import java.util.Map.Entry;
 public class CaseSupportMethod {
 
     private static final Logger logger = Logger.getLogger(CaseSupportMethod.class);
-    private static final Logger wire = AWSCloud.getWireLogger(Glacier.class);
+    private static final Logger wire = AWSCloud.getWireLogger(CaseSupportMethod.class);
     private static final String URL = "https://support.us-east-1.amazonaws.com";
     private static final String CONTENT_TYPE = "application/x-amz-json-1.1";
     private static final String service = "support";
