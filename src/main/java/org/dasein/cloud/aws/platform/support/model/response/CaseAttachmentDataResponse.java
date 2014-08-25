@@ -22,7 +22,7 @@ public class CaseAttachmentDataResponse {
     @JsonProperty(value = "__type")
     private String type;
     @JsonProperty("data")
-    private String data;
+    private byte[] data;
     @JsonProperty("fileName")
     private String fileName;
     @JsonIgnore
@@ -47,12 +47,12 @@ public class CaseAttachmentDataResponse {
     }
 
     @JsonProperty("data")
-    public String getData() {
+    public byte[] getData() {
         return data;
     }
 
     @JsonProperty("data")
-    public void setData(String data) {
+    public void setData(byte[] data) {
         this.data = data;
     }
 

@@ -28,7 +28,7 @@ public class CaseAttachmentDataOptions {
     }
 
     @JsonProperty("data")
-    public String getData() {
+    public byte[] getData() {
         return _options.getData();
     }
 
