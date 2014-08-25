@@ -19,25 +19,6 @@ import java.util.List;
 @JsonInclude(Include.NON_NULL)
 public class CaseListOptions {
 
-//    @JsonProperty(value = "afterTime")
-//    String afterTime;
-//    @JsonProperty(value = "beforeTime")
-//    String beforeTime;
-//    @JsonProperty(value = "caseIdList")
-//    List<String> caseIdList;
-//    @JsonProperty(value = "displayId")
-//    String displayId;
-//    @JsonProperty(value = "includeCommunications")
-//    Boolean includeCommunications;
-//    @JsonProperty(value = "includeResolvedCases")
-//    Boolean includeResolvedCases;
-//    @JsonProperty(value = "language")
-//    String language;
-//    @JsonProperty(value = "maxResults")
-//    Integer maxResults;
-//    @JsonProperty(value = "nextToken")
-//    String nextToken;
-
     @JsonIgnore
     private TicketListOptions _options;
 

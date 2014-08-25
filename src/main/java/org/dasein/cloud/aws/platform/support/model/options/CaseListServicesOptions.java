@@ -1,5 +1,6 @@
 package org.dasein.cloud.aws.platform.support.model.options;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -14,12 +15,7 @@ import java.util.Collection;
 @JsonInclude(Include.NON_NULL)
 public class CaseListServicesOptions {
 
-//    @JsonProperty(value = "language")
-//    String language;
-//
-//    @JsonProperty(value = "serviceCodeList")
-//    Collection<String> serviceCodeList;
-
+    @JsonIgnore
     private TicketListServicesOptions _options;
 
     private CaseListServicesOptions() {

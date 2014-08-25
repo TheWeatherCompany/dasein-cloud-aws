@@ -1,5 +1,6 @@
 package org.dasein.cloud.aws.platform.support.model.options;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -11,18 +12,15 @@ import org.dasein.cloud.platform.support.model.options.TicketAttachmentDataOptio
  */
 @JsonInclude(Include.NON_NULL)
 public class CaseAttachmentDataOptions {
-//    @JsonProperty("data")
-//    private String data;
-//    @JsonProperty("fileName")
-//    private String fileName;
 
-    private TicketAttachmentDataOptions _data;
+    @JsonIgnore
+    private TicketAttachmentDataOptions _options;
 
     private CaseAttachmentDataOptions() {
     }
 
-    private CaseAttachmentDataOptions(TicketAttachmentDataOptions _data) {
-        this._data = _data;
+    private CaseAttachmentDataOptions(TicketAttachmentDataOptions options) {
+        this._options = options;
     }
 
     public static CaseAttachmentDataOptions getInstance(TicketAttachmentDataOptions data) {
@@ -31,11 +29,11 @@ public class CaseAttachmentDataOptions {
 
     @JsonProperty("data")
     public String getData() {
-        return _data.getData();
+        return _options.getData();
     }
 
     @JsonProperty("fileName")
     public String getFileName() {
-        return _data.getFileName();
+        return _options.getFileName();
     }
 }

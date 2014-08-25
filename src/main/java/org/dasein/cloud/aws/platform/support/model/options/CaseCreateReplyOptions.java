@@ -1,5 +1,6 @@
 package org.dasein.cloud.aws.platform.support.model.options;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -14,15 +15,7 @@ import java.util.List;
 @JsonInclude(Include.NON_NULL)
 public class CaseCreateReplyOptions {
 
-//    @JsonProperty("attachmentSetId")
-//    private String attachmentSetId;
-//    @JsonProperty("caseId")
-//    private String caseId;
-//    @JsonProperty("ccEmailAddresses")
-//    private List<String> ccEmailAddresses = new ArrayList<String>();
-//    @JsonProperty("communicationBody")
-//    private String communicationBody;
-
+    @JsonIgnore
     private TicketCreateReplyOptions _options;
 
     private CaseCreateReplyOptions() {

@@ -13,9 +13,6 @@ import org.dasein.cloud.platform.support.model.options.TicketCloseOptions;
 @JsonInclude(Include.NON_NULL)
 public class CaseCloseOptions {
 
-//    @JsonProperty(value = "caseId", required = true)
-//    private String caseId;
-
     @JsonIgnore
     private TicketCloseOptions _options;
 

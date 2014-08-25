@@ -14,27 +14,7 @@ import java.util.Map;
  * Date: 21.08.2014
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({
-        "AfterTime",
-        "BeforeTime",
-        "CaseId",
-        "MaxResults",
-        "NextToken"
-})
 public class CaseListCommunicationOptions {
-
-//    @JsonProperty("AfterTime")
-//    private String afterTime;
-//    @JsonProperty("BeforeTime")
-//    private String beforeTime;
-//    @JsonProperty("CaseId")
-//    private String caseId;
-//    @JsonProperty("MaxResults")
-//    private String maxResults;
-//    @JsonProperty("NextToken")
-//    private String nextToken;
-    @JsonIgnore
-    private Map<String, Object> additionalProperties = new HashMap<String, Object>();
 
     @JsonIgnore
     private TicketListRepliesOptions _options;
