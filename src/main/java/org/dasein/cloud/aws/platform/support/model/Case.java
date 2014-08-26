@@ -1,6 +1,7 @@
 package org.dasein.cloud.aws.platform.support.model;
 
 import com.fasterxml.jackson.annotation.*;
+import org.dasein.cloud.CloudException;
 import org.dasein.cloud.aws.platform.support.CaseStatus;
 import org.dasein.cloud.platform.support.TicketSeverity;
 import org.dasein.cloud.platform.support.model.TicketReply;
@@ -59,7 +60,7 @@ public class Case {
     private Map<String, Object> additionalProperties = new HashMap<String, Object>();
 
     @JsonIgnore
-    public Ticket buildTicket() {
+    public Ticket buildTicket() throws CloudException {
         Ticket ticket = new Ticket();
         ticket.setTicketId(caseId);
         ticket.setCategoryCode(categoryCode);
@@ -67,13 +68,15 @@ public class Case {
         ticket.setDisplayId(displayId);
         ticket.setLanguage(language);
         List<TicketReply> replies = new ArrayList<TicketReply>();
-        for(Communication communication: recentCommunications.getCommunications()) {
-            replies.add(communication.buildReply());
+        if (recentCommunications != null) {
+            for (Communication communication : recentCommunications.getCommunications()) {
+                replies.add(communication.buildReply());
+            }
         }
         ticket.setRecentReplies(replies);
         ticket.setServiceCode(serviceCode);
-        ticket.setSeverityCode(TicketSeverity.valueByPriority(Integer.valueOf(severityCode)));
-        ticket.setStatus(CaseStatus.buildTicketStatus(CaseStatus.valueOf(status)));
+        ticket.setSeverityCode(TicketSeverity.valueOf((Object) severityCode));
+        ticket.setStatus(CaseStatus.buildTicketStatus(CaseStatus.valueOf((Object) status)));
         ticket.setSubject(subject);
         ticket.setSubmittedBy(submittedBy);
         ticket.setTimeCreated(timeCreated);
@@ -219,7 +222,6 @@ public class Case {
     public void setAdditionalProperty(String name, Object value) {
         this.additionalProperties.put(name, value);
     }
-
 
 
 }

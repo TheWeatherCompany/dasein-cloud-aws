@@ -328,7 +328,12 @@ public class CaseSupport extends AbstractTicketService {
                 String result = method.invoke(new ObjectMapper().writeValueAsString(options));
                 CaseDetails caseDetails = new ObjectMapper().readValue(result, CaseDetails.class);
                 for (Case caze : caseDetails.getCases()) {
-                    Ticket ticket = fillTicketReplies(caze.buildTicket());
+                    Ticket ticket;
+                    if (options.getIncludeCommunications()) {
+                        ticket = fillTicketReplies(caze.buildTicket());
+                    } else {
+                        ticket = caze.buildTicket();
+                    }
                     ticketJiterator.push(ticket);
                 }
                 if (caseDetails.getNextToken() != null) {
