@@ -1,6 +1,7 @@
 package org.dasein.cloud.aws.platform.support.model;
 
 import com.fasterxml.jackson.annotation.*;
+import org.dasein.cloud.aws.platform.support.CaseStatus;
 import org.dasein.cloud.platform.support.model.TicketReply;
 import org.dasein.cloud.platform.support.model.Ticket;
 
@@ -71,7 +72,7 @@ public class Case {
         ticket.setRecentReplies(replies);
         ticket.setServiceCode(serviceCode);
         ticket.setSeverityCode(severityCode);
-        ticket.setStatus(status);
+        ticket.setStatus(CaseStatus.buildTicketStatus(CaseStatus.valueOf(status)));
         ticket.setSubject(subject);
         ticket.setSubmittedBy(submittedBy);
         ticket.setTimeCreated(timeCreated);
