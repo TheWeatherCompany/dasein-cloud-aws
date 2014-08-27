@@ -137,7 +137,7 @@ public class CaseSupport extends AbstractTicketService {
     }
 
     @Override
-    public TicketAttachmentData getAttachment(@Nonnull TicketGetAttachmetnOptions options) throws InternalException, CloudException {
+    public TicketAttachmentData getAttachment(@Nonnull TicketGetAttachmentOptions options) throws InternalException, CloudException {
         APITrace.begin(provider, "Support.getAttachment");
         try {
             CaseSupportMethod method = new CaseSupportMethod(provider, CaseSupportTarget.DESCRIBE_ATTACHMENT);

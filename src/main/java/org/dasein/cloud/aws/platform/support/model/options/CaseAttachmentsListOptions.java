@@ -5,7 +5,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.dasein.cloud.platform.support.model.options.TicketAttachmentsListOptions;
-import org.dasein.cloud.platform.support.model.options.TicketGetAttachmetnOptions;
+import org.dasein.cloud.platform.support.model.options.TicketGetAttachmentOptions;
 
 /**
  * @author Eugene Yaroslavtsev
@@ -28,7 +28,7 @@ public class CaseAttachmentsListOptions {
         return new CaseAttachmentsListOptions(options);
     }
 
-    public static CaseAttachmentsListOptions getInstance(TicketGetAttachmetnOptions options) {
+    public static CaseAttachmentsListOptions getInstance(TicketGetAttachmentOptions options) {
         TicketAttachmentsListOptions ticketAttachmentsListOptions = new TicketAttachmentsListOptions();
         ticketAttachmentsListOptions.setAttachmentId(options.getAttachmentId());
         return new CaseAttachmentsListOptions(ticketAttachmentsListOptions);
