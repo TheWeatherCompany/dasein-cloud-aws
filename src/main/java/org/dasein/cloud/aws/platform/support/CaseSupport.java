@@ -160,14 +160,15 @@ public class CaseSupport extends AbstractTicketService {
     public Collection<TicketAttachment> listAttachments(@Nonnull TicketListAttachmentsOptions options) throws InternalException, CloudException {
         APITrace.begin(provider, "Support.listAttachments");
         try {
-            Case ca = getCase(CaseListOptions.getInstance(options));
-            if (ca.getRecentCommunications() == null) {
+            Ticket ticket = getCase(CaseListOptions.getInstance(options)).buildTicket();
+            ticket = fillTicketReplies(ticket);
+            if (ticket.getRecentReplies() == null) {
                 return null;
             }
             List<TicketAttachment> result = new ArrayList<TicketAttachment>();
-            for (Communication communication : ca.getRecentCommunications().getCommunications()) {
-                for (org.dasein.cloud.aws.platform.support.model.Attachment attachment : communication.getAttachmentSet()) {
-                    result.add(attachment.buildAttachment());
+            for (TicketReply reply : ticket.getRecentReplies()) {
+                for (TicketAttachment attachment : reply.getTicketAttachmentSet()) {
+                    result.add(attachment);
                 }
             }
             return result;
@@ -329,7 +330,7 @@ public class CaseSupport extends AbstractTicketService {
                 CaseDetails caseDetails = new ObjectMapper().readValue(result, CaseDetails.class);
                 for (Case caze : caseDetails.getCases()) {
                     Ticket ticket;
-                    if (options.getIncludeCommunications()) {
+                    if (options.getIncludeCommunications() != null && options.getIncludeCommunications()) {
                         ticket = fillTicketReplies(caze.buildTicket());
                     } else {
                         ticket = caze.buildTicket();
