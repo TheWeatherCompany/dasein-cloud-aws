@@ -2633,12 +2633,12 @@ public class EC2Instance extends AbstractVMSupport<AWSCloud> {
     }
 
     @Override
-    public void removeTags(@Nonnull String vmId, @Nonnull Tag... tags) throws CloudException, InternalException {
+    public void removeTags( @Nonnull String vmId, @Nonnull Tag... tags ) throws CloudException, InternalException {
         getProvider().removeTags(vmId, tags);
     }
 
     @Override
-    public void removeTags(@Nonnull String[] vmIds, @Nonnull Tag... tags) throws CloudException, InternalException {
+    public void removeTags( @Nonnull String[] vmIds, @Nonnull Tag... tags ) throws CloudException, InternalException {
         getProvider().removeTags(vmIds, tags);
     }
 
