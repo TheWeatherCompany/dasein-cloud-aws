@@ -354,11 +354,11 @@ public class AWSCloud extends AbstractCloud {
         }
     }
 
-    public boolean removeTags( String resourceId, Tag... keyValuePairs ) {
+    public boolean removeTags( String resourceId, Tag... keyValuePairs ) throws CloudException, InternalException {
         return removeTags(new String[]{resourceId}, keyValuePairs);
     }
 
-    public boolean removeTags( String[] resourceIds, Tag... keyValuePairs ) {
+    public boolean removeTags( String[] resourceIds, Tag... keyValuePairs ) throws InternalException, CloudException {
         APITrace.begin(this, "Cloud.removeTags");
         try {
             try {
