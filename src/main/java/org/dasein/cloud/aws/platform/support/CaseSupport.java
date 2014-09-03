@@ -35,21 +35,24 @@ public class CaseSupport extends AbstractTicketService {
 
     private AWSCloud provider = null;
 
-    public CaseSupport(@Nonnull AWSCloud provider) {
+    public CaseSupport( @Nonnull AWSCloud provider ) {
         super(provider);
         this.provider = provider;
     }
 
     @Override
-    public Collection<Ticket> listTickets(@Nonnull final TicketListOptions options) throws InternalException, CloudException {
+    public Collection<Ticket> listTickets( @Nonnull final TicketListOptions options ) throws InternalException, CloudException {
         PopulatorThread<Ticket> populatorThread;
+
+        final Boolean isIncludeReplies = options.getIncludeCommunications();
+        options.setIncludeCommunications(false);
 
         provider.hold();
         populatorThread = new PopulatorThread<Ticket>(new JiteratorPopulator<Ticket>() {
             @Override
-            public void populate(@Nonnull Jiterator<Ticket> ticketJiterator) throws Exception {
+            public void populate( @Nonnull Jiterator<Ticket> ticketJiterator ) throws Exception {
                 try {
-                    populateTickets(ticketJiterator, CaseListOptions.getInstance(options));
+                    populateTickets(ticketJiterator, CaseListOptions.getInstance(options), isIncludeReplies);
                 } finally {
                     provider.release();
                 }
@@ -61,14 +64,14 @@ public class CaseSupport extends AbstractTicketService {
     }
 
     @Override
-    public void closeTicket(@Nonnull TicketCloseOptions options) throws InternalException, CloudException {
+    public void closeTicket( @Nonnull TicketCloseOptions options ) throws InternalException, CloudException {
         APITrace.begin(provider, "Support.closeTicket");
         try {
             CaseSupportMethod method = new CaseSupportMethod(provider, CaseSupportTarget.RESOLVE_CASE);
 
             try {
                 method.invoke(new ObjectMapper().writeValueAsString(CaseCloseOptions.getInstance(options)));
-            } catch (JsonProcessingException e) {
+            } catch( JsonProcessingException e ) {
                 logger.error(e);
                 throw new CloudException("Unable to process parameters" + e.getMessage());
             }
@@ -78,7 +81,7 @@ public class CaseSupport extends AbstractTicketService {
     }
 
     @Override
-    public String createTicket(@Nonnull TicketCreateOptions options) throws InternalException, CloudException {
+    public String createTicket( @Nonnull TicketCreateOptions options ) throws InternalException, CloudException {
         APITrace.begin(provider, "Support.createTicket");
         try {
             CaseSupportMethod method = new CaseSupportMethod(provider, CaseSupportTarget.CREATE_CASE);
@@ -86,14 +89,14 @@ public class CaseSupport extends AbstractTicketService {
                 String result = method.invoke(new ObjectMapper().writeValueAsString(CaseCreateOptions.getInstance(options)));
                 try {
                     return new ObjectMapper().readValue(result, CaseCreateCaseResponse.class).getCaseId();
-                } catch (UnrecognizedPropertyException e) {
+                } catch( UnrecognizedPropertyException e ) {
                     logger.error("Error parsing response from AWS: " + e.getMessage());
                     throw new CloudException(CloudErrorType.COMMUNICATION, 500, null, e.getMessage());
                 }
-            } catch (JsonProcessingException e) {
+            } catch( JsonProcessingException e ) {
                 logger.error(e);
                 throw new CloudException("Unable to process parameters" + e.getMessage());
-            } catch (IOException e) {
+            } catch( IOException e ) {
                 logger.error(e);
                 throw new CloudException(e);
             }
@@ -103,12 +106,17 @@ public class CaseSupport extends AbstractTicketService {
     }
 
     @Override
-    public Ticket getTicket(@Nonnull TicketGetOptions options) throws InternalException, CloudException {
+    public Ticket getTicket( @Nonnull TicketGetOptions options ) throws InternalException, CloudException {
         APITrace.begin(provider, "Support.getTicket");
         try {
+            Boolean isIncludeReplies = options.getIncludeCommunications();
+            options.setIncludeCommunications(false);
+
             Case caze = getCase(CaseListOptions.getInstance(options));
             Ticket ticket = caze.buildTicket();
-            ticket = fillTicketReplies(ticket);
+            if( isIncludeReplies!= null && isIncludeReplies ) {
+                ticket = fillTicketReplies(ticket);
+            }
             return ticket;
         } finally {
             APITrace.end();
@@ -116,13 +124,13 @@ public class CaseSupport extends AbstractTicketService {
     }
 
     @Override
-    public Collection<TicketReply> listReplies(@Nonnull final TicketListRepliesOptions options) throws InternalException, CloudException {
+    public Collection<TicketReply> listReplies( @Nonnull final TicketListRepliesOptions options ) throws InternalException, CloudException {
         PopulatorThread<TicketReply> populatorThread;
 
         provider.hold();
         populatorThread = new PopulatorThread<TicketReply>(new JiteratorPopulator<TicketReply>() {
             @Override
-            public void populate(@Nonnull Jiterator<TicketReply> replyJiterator) throws Exception {
+            public void populate( @Nonnull Jiterator<TicketReply> replyJiterator ) throws Exception {
                 try {
                     populateReplies(replyJiterator, CaseListCommunicationOptions.getInstance(options));
                 } finally {
@@ -137,17 +145,17 @@ public class CaseSupport extends AbstractTicketService {
     }
 
     @Override
-    public TicketAttachmentData getAttachment(@Nonnull TicketGetAttachmentOptions options) throws InternalException, CloudException {
+    public TicketAttachmentData getAttachment( @Nonnull TicketGetAttachmentOptions options ) throws InternalException, CloudException {
         APITrace.begin(provider, "Support.getAttachment");
         try {
             CaseSupportMethod method = new CaseSupportMethod(provider, CaseSupportTarget.DESCRIBE_ATTACHMENT);
             try {
                 String result = method.invoke(new ObjectMapper().writeValueAsString(CaseAttachmentsListOptions.getInstance(options)));
                 return new ObjectMapper().readValue(result, CaseAttachmentResponse.class).getAttachment().buildAttachmentData();
-            } catch (JsonProcessingException e) {
+            } catch( JsonProcessingException e ) {
                 logger.error(e);
                 throw new CloudException("Unable to process parameters" + e.getMessage());
-            } catch (IOException e) {
+            } catch( IOException e ) {
                 logger.error(e);
                 throw new CloudException("Unable to process results" + e.getMessage());
             }
@@ -157,17 +165,17 @@ public class CaseSupport extends AbstractTicketService {
     }
 
     @Override
-    public Collection<TicketAttachment> listAttachments(@Nonnull TicketListAttachmentsOptions options) throws InternalException, CloudException {
+    public Collection<TicketAttachment> listAttachments( @Nonnull TicketListAttachmentsOptions options ) throws InternalException, CloudException {
         APITrace.begin(provider, "Support.listAttachments");
         try {
             Ticket ticket = getCase(CaseListOptions.getInstance(options)).buildTicket();
             ticket = fillTicketReplies(ticket);
-            if (ticket.getRecentReplies() == null) {
+            if( ticket.getRecentReplies() == null ) {
                 return null;
             }
             List<TicketAttachment> result = new ArrayList<TicketAttachment>();
-            for (TicketReply reply : ticket.getRecentReplies()) {
-                for (TicketAttachment attachment : reply.getTicketAttachmentSet()) {
+            for( TicketReply reply : ticket.getRecentReplies() ) {
+                for( TicketAttachment attachment : reply.getTicketAttachmentSet() ) {
                     result.add(attachment);
                 }
             }
@@ -178,7 +186,7 @@ public class CaseSupport extends AbstractTicketService {
     }
 
     @Override
-    public Collection<TicketService> listServices(@Nonnull TicketListServicesOptions options) throws InternalException, CloudException {
+    public Collection<TicketService> listServices( @Nonnull TicketListServicesOptions options ) throws InternalException, CloudException {
         APITrace.begin(provider, "Support.listServices");
         try {
             CaseSupportMethod method = new CaseSupportMethod(provider, CaseSupportTarget.DESCRIBE_SERVICES);
@@ -186,11 +194,11 @@ public class CaseSupport extends AbstractTicketService {
                 String result = method.invoke(new ObjectMapper().writeValueAsString(CaseListServicesOptions.getInstance(options)));
                 List<CaseServiceResponse> caseServiceResponses = new ObjectMapper().readValue(result, CaseListServicesResponse.class).getCaseServiceResponses();
                 List<TicketService> listResult = new ArrayList<TicketService>();
-                for (CaseServiceResponse caseServiceResponse : caseServiceResponses) {
+                for( CaseServiceResponse caseServiceResponse : caseServiceResponses ) {
                     listResult.add(caseServiceResponse.buildService());
                 }
                 return listResult;
-            } catch (IOException e) {
+            } catch( IOException e ) {
                 logger.error(e);
                 throw new CloudException("Unable to process parameters" + e.getMessage());
             }
@@ -200,18 +208,18 @@ public class CaseSupport extends AbstractTicketService {
     }
 
     @Override
-    public void createReply(@Nonnull TicketCreateReplyOptions options) throws InternalException, CloudException {
+    public void createReply( @Nonnull TicketCreateReplyOptions options ) throws InternalException, CloudException {
         APITrace.begin(provider, "Support.createReply");
         try {
             CaseSupportMethod method = new CaseSupportMethod(provider, CaseSupportTarget.ADD_COMMUNICATION_TO_CASE);
             try {
                 String result = method.invoke(new ObjectMapper().writeValueAsString(CaseCreateReplyOptions.getInstance(options)));
                 CaseCreateReplyResponse response = new ObjectMapper().readValue(result, CaseCreateReplyResponse.class);
-                if (!response.getResult().equalsIgnoreCase("true")) {
+                if( !response.getResult().equalsIgnoreCase("true") ) {
                     logger.error("Unable to create reply");
                     throw new CloudException("Unable to create reply");
                 }
-            } catch (IOException e) {
+            } catch( IOException e ) {
                 logger.error(e);
                 throw new CloudException("Unable to process parameters" + e.getMessage());
             }
@@ -221,7 +229,7 @@ public class CaseSupport extends AbstractTicketService {
     }
 
     @Override
-    public String createAttachments(@Nonnull TicketCreateAttachmentsOptions options) throws InternalException, CloudException {
+    public String createAttachments( @Nonnull TicketCreateAttachmentsOptions options ) throws InternalException, CloudException {
         APITrace.begin(provider, "Support.createAttachments");
         try {
             CaseSupportMethod method = new CaseSupportMethod(provider, CaseSupportTarget.ADD_ATTACHMENTS_TO_SET);
@@ -236,7 +244,7 @@ public class CaseSupport extends AbstractTicketService {
                 createReply(createOptions);
 
                 return attachmentSetId;
-            } catch (IOException e) {
+            } catch( IOException e ) {
                 logger.error(e);
                 throw new CloudException("Unable to process parameters" + e.getMessage());
             }
@@ -253,24 +261,26 @@ public class CaseSupport extends AbstractTicketService {
      * @throws InternalException
      * @throws CloudException
      */
-    private Case getCase(CaseListOptions options) throws InternalException, CloudException {
+    private Case getCase( CaseListOptions options ) throws InternalException, CloudException {
         CaseSupportMethod method = new CaseSupportMethod(provider, CaseSupportTarget.DESCRIBE_CASES);
 
         try {
             String result = method.invoke(new ObjectMapper().writeValueAsString(options));
             CaseDetails caseDetails = new ObjectMapper().readValue(result, CaseDetails.class);
             List<Case> cases = caseDetails.getCases();
-            if (cases == null) {
+            if( cases == null ) {
                 throw new CloudException("Response did not include any cases");
-            } else if (cases.size() != 1) {
+            }
+            else if( cases.size() != 1 ) {
                 throw new CloudException("Response include wrong amount of case [" + cases.size() + "]");
-            } else {
+            }
+            else {
                 return cases.get(0);
             }
-        } catch (JsonProcessingException e) {
+        } catch( JsonProcessingException e ) {
             logger.error(e);
             throw new CloudException("Unable to process parameters" + e.getMessage());
-        } catch (IOException e) {
+        } catch( IOException e ) {
             logger.error(e);
             throw new CloudException(e);
         }
@@ -285,25 +295,25 @@ public class CaseSupport extends AbstractTicketService {
      * @throws InternalException
      * @throws CloudException
      */
-    private void populateReplies(Jiterator<TicketReply> replyJiterator, CaseListCommunicationOptions options) throws InternalException, CloudException {
+    private void populateReplies( Jiterator<TicketReply> replyJiterator, CaseListCommunicationOptions options ) throws InternalException, CloudException {
         APITrace.begin(provider, "Support.listReplies");
         try {
             CaseSupportMethod method = new CaseSupportMethod(provider, CaseSupportTarget.DESCRIBE_COMMUNICATIONS);
             try {
                 String result = method.invoke(new ObjectMapper().writeValueAsString(options));
                 RecentCommunications recentCommunications = new ObjectMapper().readValue(result, RecentCommunications.class);
-                for (Communication communication : recentCommunications.getCommunications()) {
+                for( Communication communication : recentCommunications.getCommunications() ) {
                     replyJiterator.push(communication.buildReply());
                 }
                 String nextToken = recentCommunications.getNextToken();
-                if (nextToken != null) {
+                if( nextToken != null ) {
                     options.setNextToken(nextToken);
                     populateReplies(replyJiterator, options);
                 }
-            } catch (JsonProcessingException e) {
+            } catch( JsonProcessingException e ) {
                 logger.error(e);
                 throw new CloudException("Unable to process parameters" + e.getMessage());
-            } catch (IOException e) {
+            } catch( IOException e ) {
                 logger.error(e);
                 throw new CloudException("Unable to process results" + e.getMessage());
             }
@@ -320,7 +330,7 @@ public class CaseSupport extends AbstractTicketService {
      * @throws InternalException
      * @throws CloudException
      */
-    private void populateTickets(Jiterator<Ticket> ticketJiterator, CaseListOptions options) throws InternalException, CloudException {
+    private void populateTickets( Jiterator<Ticket> ticketJiterator, CaseListOptions options, Boolean isIncludeReplies ) throws InternalException, CloudException {
         APITrace.begin(provider, "Support.listTickets");
         try {
             CaseSupportMethod method = new CaseSupportMethod(provider, CaseSupportTarget.DESCRIBE_CASES);
@@ -328,23 +338,24 @@ public class CaseSupport extends AbstractTicketService {
             try {
                 String result = method.invoke(new ObjectMapper().writeValueAsString(options));
                 CaseDetails caseDetails = new ObjectMapper().readValue(result, CaseDetails.class);
-                for (Case caze : caseDetails.getCases()) {
+                for( Case caze : caseDetails.getCases() ) {
                     Ticket ticket;
-                    if (options.getIncludeCommunications() != null && options.getIncludeCommunications()) {
+                    if( isIncludeReplies != null && isIncludeReplies ) {
                         ticket = fillTicketReplies(caze.buildTicket());
-                    } else {
+                    }
+                    else {
                         ticket = caze.buildTicket();
                     }
                     ticketJiterator.push(ticket);
                 }
-                if (caseDetails.getNextToken() != null) {
+                if( caseDetails.getNextToken() != null ) {
                     options.setNextToken(caseDetails.getNextToken());
-                    populateTickets(ticketJiterator, options);
+                    populateTickets(ticketJiterator, options, isIncludeReplies);
                 }
-            } catch (JsonProcessingException e) {
+            } catch( JsonProcessingException e ) {
                 logger.error(e);
                 throw new CloudException("Unable to process parameters" + e.getMessage());
-            } catch (IOException e) {
+            } catch( IOException e ) {
                 logger.error(e);
                 throw new CloudException(e);
             }
@@ -361,7 +372,7 @@ public class CaseSupport extends AbstractTicketService {
      * @throws InternalException
      * @throws CloudException
      */
-    private Ticket fillTicketReplies(Ticket ticket) throws InternalException, CloudException {
+    private Ticket fillTicketReplies( Ticket ticket ) throws InternalException, CloudException {
         TicketListRepliesOptions options = new TicketListRepliesOptions();
         options.setTicketId(ticket.getTicketId());
         ticket.setRecentReplies(new ArrayList<TicketReply>(listReplies(options)));

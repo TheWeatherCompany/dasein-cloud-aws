@@ -27,6 +27,7 @@ public class CaseListCommunicationOptions {
     }
 
     public static CaseListCommunicationOptions getInstance(TicketListRepliesOptions options){
+        options.setMaxResults(100);
         return new CaseListCommunicationOptions(options);
     }
 
@@ -46,7 +47,7 @@ public class CaseListCommunicationOptions {
     }
 
     @JsonProperty("maxResults")
-    public String getMaxResults() {
+    public Integer getMaxResults() {
         return _options.getMaxResults();
     }
 

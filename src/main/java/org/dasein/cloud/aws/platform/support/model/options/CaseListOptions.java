@@ -30,11 +30,14 @@ public class CaseListOptions {
     }
 
     public static CaseListOptions getInstance(TicketListOptions options) {
+        options.setMaxResults(100);
        return new CaseListOptions(options);
     }
 
     public static CaseListOptions getInstance(TicketGetOptions options) {
-        return setId(options.getTicketId());
+        CaseListOptions caseListOptions = setId(options.getTicketId());
+        caseListOptions.setIncludeCommunications(options.getIncludeCommunications());
+        return caseListOptions;
     }
 
     public static CaseListOptions getInstance(TicketListRepliesOptions options) {
@@ -104,5 +107,10 @@ public class CaseListOptions {
     @JsonIgnore
     public void setNextToken(String nextToken) {
         _options.setNextToken(nextToken);
+    }
+
+    @JsonIgnore
+    public void setIncludeCommunications( Boolean includeCommunications) {
+        _options.setIncludeCommunications(includeCommunications);
     }
 }
