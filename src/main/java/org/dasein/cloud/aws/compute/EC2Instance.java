@@ -2634,20 +2634,12 @@ public class EC2Instance extends AbstractVMSupport<AWSCloud> {
 
     @Override
     public void removeTags(@Nonnull String vmId, @Nonnull Tag... tags) throws CloudException, InternalException {
-        removeTags(new String[]{vmId}, tags);
+        getProvider().removeTags(vmId, tags);
     }
 
     @Override
     public void removeTags(@Nonnull String[] vmIds, @Nonnull Tag... tags) throws CloudException, InternalException {
-        //response with 204 status we get every request with any valid instance id (if instance not exist)
-        //because need verify the instance exists in the region specified by the request
-        for (String vmId : vmIds) {
-            if(checkExistingInstance(vmId)) {
-                getProvider().removeTags(vmId, tags);
-            } else {
-                throw EC2Exception.create(404, null, null, String.format("No such instance [%s] in region [%s]", vmId, getContext().getRegionId()));
-            }
-        }
+        getProvider().removeTags(vmIds, tags);
     }
 
     @Override
@@ -3130,14 +3122,6 @@ public class EC2Instance extends AbstractVMSupport<AWSCloud> {
             }
         }
         return SpotVirtualMachineRequest.getInstance(requestId, price, type, amiId, productId, createdTs, validFromTs, validUntilTs, fulfillmentTs, fulfillmentDcid, launchGroup);
-    }
-
-    private boolean checkExistingInstance(@Nonnull String wmId) throws CloudException, InternalException {
-        try {
-            return getVirtualMachine(wmId) != null;
-        } catch (Exception ex) {
-            return false;
-        }
     }
 
 }
