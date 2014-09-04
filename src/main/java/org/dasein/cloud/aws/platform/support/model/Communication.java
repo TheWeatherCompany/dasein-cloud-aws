@@ -1,6 +1,7 @@
 package org.dasein.cloud.aws.platform.support.model;
 
 import com.fasterxml.jackson.annotation.*;
+import org.dasein.cloud.platform.support.model.TicketAttachment;
 import org.dasein.cloud.platform.support.model.TicketReply;
 
 import java.util.ArrayList;
@@ -32,7 +33,7 @@ public class Communication {
         for( Attachment attachment : attachmentSet ) {
             attachments.add(attachment.buildAttachment());
         }
-        reply.setTicketAttachmentSet(attachments);
+        reply.setTicketAttachmentSet(attachments.toArray(new TicketAttachment[attachments.size()]));
         reply.setBody(body);
         reply.setTicketId(caseId);
         reply.setSubmittedBy(submittedBy);

@@ -9,14 +9,11 @@ import org.dasein.cloud.platform.support.model.options.TicketListAttachmentsOpti
 import org.dasein.cloud.platform.support.model.options.TicketListOptions;
 import org.dasein.cloud.platform.support.model.options.TicketListRepliesOptions;
 
-import java.util.Arrays;
-import java.util.List;
-
 /**
  * @author Eugene Yaroslavtsev
  * @since 14.08.2014
  */
-@JsonInclude( Include.NON_NULL )
+@JsonInclude(Include.NON_NULL)
 public class CaseListOptions {
 
     @JsonIgnore
@@ -55,51 +52,51 @@ public class CaseListOptions {
 
     private static CaseListOptions buildWithTicketId( String id, Integer maxResults ) {
         TicketListOptions ticketListOptions = new TicketListOptions();
-        ticketListOptions.setCaseIdList(Arrays.asList(id));
+        ticketListOptions.setCaseIdList(new String[]{id});
         return new CaseListOptions(ticketListOptions, null, maxResults);
     }
 
-    @JsonProperty( value = "afterTime" )
+    @JsonProperty(value = "afterTime")
     public String getAfterTime() {
         return _options.getAfterTime();
     }
 
-    @JsonProperty( value = "beforeTime" )
+    @JsonProperty(value = "beforeTime")
     public String getBeforeTime() {
         return _options.getBeforeTime();
     }
 
     @JsonProperty( value = "caseIdList" )
-    public List<String> getCaseIdList() {
+    public String[] getCaseIdList() {
         return _options.getCaseIdList();
     }
 
-    @JsonProperty( value = "displayId" )
+    @JsonProperty(value = "displayId")
     public String getDisplayId() {
         return _options.getDisplayId();
     }
 
-    @JsonProperty( value = "includeCommunications" )
+    @JsonProperty(value = "includeCommunications")
     public Boolean getIncludeCommunications() {
         return _options.getIncludeCommunications();
     }
 
-    @JsonProperty( value = "includeResolvedCases" )
+    @JsonProperty(value = "includeResolvedCases")
     public Boolean getIncludeResolvedCases() {
         return _options.getIncludeResolvedCases();
     }
 
-    @JsonProperty( value = "language" )
+    @JsonProperty(value = "language")
     public String getLanguage() {
         return _options.getLanguage();
     }
 
-    @JsonProperty( value = "maxResults" )
+    @JsonProperty(value = "maxResults")
     public Integer getMaxResults() {
         return _maxResults;
     }
 
-    @JsonProperty( value = "nextToken" )
+    @JsonProperty(value = "nextToken")
     public String getNextToken() {
         return _nextToken;
     }

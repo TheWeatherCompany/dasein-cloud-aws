@@ -6,13 +6,11 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.dasein.cloud.platform.support.model.options.TicketCreateReplyOptions;
 
-import java.util.List;
-
 /**
  * @author Eugene Yaroslavtsev
  * @since 18.08.2014
  */
-@JsonInclude( Include.NON_NULL )
+@JsonInclude(Include.NON_NULL)
 public class CaseCreateReplyOptions {
 
     @JsonIgnore
@@ -29,22 +27,22 @@ public class CaseCreateReplyOptions {
         return new CaseCreateReplyOptions(options);
     }
 
-    @JsonProperty( "attachmentSetId" )
+    @JsonProperty("attachmentSetId")
     public String getAttachmentSetId() {
         return _options.getAttachmentSetId();
     }
 
-    @JsonProperty( "caseId" )
+    @JsonProperty("caseId")
     public String getCaseId() {
         return _options.getCaseId();
     }
 
     @JsonProperty( "ccEmailAddresses" )
-    public List<String> getCcEmailAddresses() {
+    public String[] getCcEmailAddresses() {
         return _options.getCcEmailAddresses();
     }
 
-    @JsonProperty( "communicationBody" )
+    @JsonProperty("communicationBody")
     public String getCommunicationBody() {
         return _options.getCommunicationBody();
     }

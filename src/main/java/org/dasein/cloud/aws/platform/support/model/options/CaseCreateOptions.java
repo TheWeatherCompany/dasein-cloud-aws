@@ -6,8 +6,6 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.dasein.cloud.platform.support.model.options.TicketCreateOptions;
 
-import java.util.Collection;
-
 /**
  * @author Eugene Yaroslavtsev
  * @since 15.08.2014
@@ -40,7 +38,7 @@ public class CaseCreateOptions {
     }
 
     @JsonProperty( value = "ccEmailAddresses" )
-    public Collection<String> getCcEmailAddresses() {
+    public String[] getCcEmailAddresses() {
         return _options.getCcEmailAddresses();
     }
 

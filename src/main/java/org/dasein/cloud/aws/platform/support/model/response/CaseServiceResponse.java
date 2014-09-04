@@ -1,6 +1,7 @@
 package org.dasein.cloud.aws.platform.support.model.response;
 
 import com.fasterxml.jackson.annotation.*;
+import org.dasein.cloud.platform.support.model.TicketCategory;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -35,7 +36,7 @@ public class CaseServiceResponse {
         for( CaseCategoryResponse caseCategoryResponse : categories ) {
             list.add(caseCategoryResponse.build());
         }
-        service.setCategories(list);
+        service.setCategories(list.toArray(new TicketCategory[list.size()]));
         return service;
     }
 
