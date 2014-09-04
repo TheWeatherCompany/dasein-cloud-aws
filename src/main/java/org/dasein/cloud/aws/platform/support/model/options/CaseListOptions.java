@@ -23,37 +23,40 @@ public class CaseListOptions {
     private TicketListOptions _options;
     @JsonIgnore
     private String _nextToken;
+    @JsonIgnore
+    private Integer _maxResults;
 
     private CaseListOptions() {
     }
 
-    private CaseListOptions( TicketListOptions _options, String nextToken ) {
+    private CaseListOptions( TicketListOptions _options, String nextToken, Integer maxResults ) {
+        this._maxResults = maxResults;
         this._nextToken = nextToken;
         this._options = _options;
     }
 
     public static CaseListOptions getInstance( TicketListOptions options ) {
-        return new CaseListOptions(options, null);
+        return new CaseListOptions(options, null, 100);
     }
 
     public static CaseListOptions getInstance( TicketGetOptions options ) {
-        CaseListOptions caseListOptions = setId(options.getTicketId());
+        CaseListOptions caseListOptions = buildWithTicketId(options.getTicketId(), null);
         caseListOptions.setIncludeCommunications(options.getIncludeCommunications());
         return caseListOptions;
     }
 
     public static CaseListOptions getInstance( TicketListRepliesOptions options ) {
-        return setId(options.getTicketId());
+        return buildWithTicketId(options.getTicketId(), null);
     }
 
     public static CaseListOptions getInstance( TicketListAttachmentsOptions options ) {
-        return setId(options.getTicketId());
+        return buildWithTicketId(options.getTicketId(), null);
     }
 
-    private static CaseListOptions setId( String id ) {
+    private static CaseListOptions buildWithTicketId( String id, Integer maxResults ) {
         TicketListOptions ticketListOptions = new TicketListOptions();
         ticketListOptions.setCaseIdList(Arrays.asList(id));
-        return new CaseListOptions(ticketListOptions, null);
+        return new CaseListOptions(ticketListOptions, null, maxResults);
     }
 
     @JsonProperty( value = "afterTime" )
@@ -93,7 +96,7 @@ public class CaseListOptions {
 
     @JsonProperty( value = "maxResults" )
     public Integer getMaxResults() {
-        return 100;
+        return _maxResults;
     }
 
     @JsonProperty( value = "nextToken" )

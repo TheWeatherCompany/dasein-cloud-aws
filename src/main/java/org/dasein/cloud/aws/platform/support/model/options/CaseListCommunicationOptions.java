@@ -16,17 +16,20 @@ public class CaseListCommunicationOptions {
     private TicketListRepliesOptions _options;
     @JsonIgnore
     private String _nextToken;
+    @JsonIgnore
+    private Integer _maxResults;
 
     private CaseListCommunicationOptions() {
     }
 
-    private CaseListCommunicationOptions( TicketListRepliesOptions options, String nextToken ) {
+    private CaseListCommunicationOptions( TicketListRepliesOptions options, String nextToken, Integer maxResults ) {
         this._nextToken = nextToken;
+        this._maxResults = maxResults;
         this._options = options;
     }
 
     public static CaseListCommunicationOptions getInstance( TicketListRepliesOptions options ) {
-        return new CaseListCommunicationOptions(options, null);
+        return new CaseListCommunicationOptions(options, null, 100);
     }
 
     @JsonProperty( "afterTime" )
@@ -46,7 +49,7 @@ public class CaseListCommunicationOptions {
 
     @JsonProperty( "maxResults" )
     public Integer getMaxResults() {
-        return 100;
+        return _maxResults;
     }
 
     @JsonProperty( "nextToken" )
