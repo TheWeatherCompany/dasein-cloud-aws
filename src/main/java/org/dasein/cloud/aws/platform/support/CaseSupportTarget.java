@@ -13,11 +13,10 @@ public enum CaseSupportTarget {
     DESCRIBE_SERVICES("AWSSupport_20130415.DescribeServices"),
     ADD_COMMUNICATION_TO_CASE("AWSSupport_20130415.AddCommunicationToCase"),
     ADD_ATTACHMENTS_TO_SET("AWSSupport_20130415.AddAttachmentsToSet"),
-    DESCRIBE_COMMUNICATIONS("AWSSupport_20130415.DescribeCommunications"),
-    ;
+    DESCRIBE_COMMUNICATIONS("AWSSupport_20130415.DescribeCommunications"),;
     private String target;
 
-    CaseSupportTarget(String target) {
+    CaseSupportTarget( String target ) {
         this.target = target;
     }
 

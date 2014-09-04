@@ -12,11 +12,7 @@ import java.util.Map;
  * Date: 20.08.2014
  */
 @JsonInclude(Include.NON_NULL)
-@JsonPropertyOrder({
-        "__type",
-        "data",
-        "fileName"
-})
+@JsonPropertyOrder({"__type", "data", "fileName"})
 public class CaseAttachmentDataResponse {
 
     @JsonProperty(value = "__type")
@@ -42,7 +38,7 @@ public class CaseAttachmentDataResponse {
     }
 
     @JsonProperty(value = "__type")
-    public void setType(String type) {
+    public void setType( String type ) {
         this.type = type;
     }
 
@@ -52,7 +48,7 @@ public class CaseAttachmentDataResponse {
     }
 
     @JsonProperty("data")
-    public void setData(byte[] data) {
+    public void setData( byte[] data ) {
         this.data = data;
     }
 
@@ -62,7 +58,7 @@ public class CaseAttachmentDataResponse {
     }
 
     @JsonProperty("fileName")
-    public void setFileName(String fileName) {
+    public void setFileName( String fileName ) {
         this.fileName = fileName;
     }
 
@@ -72,7 +68,7 @@ public class CaseAttachmentDataResponse {
     }
 
     @JsonAnySetter
-    public void setAdditionalProperty(String name, Object value) {
+    public void setAdditionalProperty( String name, Object value ) {
         this.additionalProperties.put(name, value);
     }
 }

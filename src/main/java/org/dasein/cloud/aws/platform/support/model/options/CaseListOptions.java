@@ -25,30 +25,30 @@ public class CaseListOptions {
     private CaseListOptions() {
     }
 
-    private CaseListOptions(TicketListOptions _options) {
+    private CaseListOptions( TicketListOptions _options ) {
         this._options = _options;
     }
 
-    public static CaseListOptions getInstance(TicketListOptions options) {
+    public static CaseListOptions getInstance( TicketListOptions options ) {
         options.setMaxResults(100);
-       return new CaseListOptions(options);
+        return new CaseListOptions(options);
     }
 
-    public static CaseListOptions getInstance(TicketGetOptions options) {
+    public static CaseListOptions getInstance( TicketGetOptions options ) {
         CaseListOptions caseListOptions = setId(options.getTicketId());
         caseListOptions.setIncludeCommunications(options.getIncludeCommunications());
         return caseListOptions;
     }
 
-    public static CaseListOptions getInstance(TicketListRepliesOptions options) {
+    public static CaseListOptions getInstance( TicketListRepliesOptions options ) {
         return setId(options.getTicketId());
     }
 
-    public static CaseListOptions getInstance(TicketListAttachmentsOptions options) {
+    public static CaseListOptions getInstance( TicketListAttachmentsOptions options ) {
         return setId(options.getTicketId());
     }
 
-    private static CaseListOptions setId(String id) {
+    private static CaseListOptions setId( String id ) {
         TicketListOptions ticketListOptions = new TicketListOptions();
         ticketListOptions.setCaseIdList(Arrays.asList(id));
         return new CaseListOptions(ticketListOptions);
@@ -105,12 +105,12 @@ public class CaseListOptions {
     }
 
     @JsonIgnore
-    public void setNextToken(String nextToken) {
+    public void setNextToken( String nextToken ) {
         _options.setNextToken(nextToken);
     }
 
     @JsonIgnore
-    public void setIncludeCommunications( Boolean includeCommunications) {
+    public void setIncludeCommunications( Boolean includeCommunications ) {
         _options.setIncludeCommunications(includeCommunications);
     }
 }

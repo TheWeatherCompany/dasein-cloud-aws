@@ -11,9 +11,7 @@ import java.util.Map;
  * @since 20.08.2014
  */
 @JsonInclude(Include.NON_NULL)
-@JsonPropertyOrder({
-        "attachment"
-})
+@JsonPropertyOrder({"attachment"})
 public class CaseAttachmentResponse {
 
     @JsonProperty("attachment")
@@ -27,7 +25,7 @@ public class CaseAttachmentResponse {
     }
 
     @JsonProperty("attachment")
-    public void setAttachment(CaseAttachmentDataResponse attachment) {
+    public void setAttachment( CaseAttachmentDataResponse attachment ) {
         this.attachment = attachment;
     }
 
@@ -37,7 +35,7 @@ public class CaseAttachmentResponse {
     }
 
     @JsonAnySetter
-    public void setAdditionalProperty(String name, Object value) {
+    public void setAdditionalProperty( String name, Object value ) {
         this.additionalProperties.put(name, value);
     }
 

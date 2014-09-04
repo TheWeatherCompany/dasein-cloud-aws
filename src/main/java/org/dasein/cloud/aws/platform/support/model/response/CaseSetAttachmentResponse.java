@@ -10,10 +10,7 @@ import java.util.Map;
  * Date: 22.08.2014
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({
-        "attachmentSetId",
-        "expiryTime"
-})
+@JsonPropertyOrder({"attachmentSetId", "expiryTime"})
 public class CaseSetAttachmentResponse {
 
     @JsonProperty("attachmentSetId")
@@ -29,7 +26,7 @@ public class CaseSetAttachmentResponse {
     }
 
     @JsonProperty("attachmentSetId")
-    public void setAttachmentSetId(String attachmentSetId) {
+    public void setAttachmentSetId( String attachmentSetId ) {
         this.attachmentSetId = attachmentSetId;
     }
 
@@ -39,7 +36,7 @@ public class CaseSetAttachmentResponse {
     }
 
     @JsonProperty("expiryTime")
-    public void setExpiryTime(String expiryTime) {
+    public void setExpiryTime( String expiryTime ) {
         this.expiryTime = expiryTime;
     }
 
@@ -49,7 +46,7 @@ public class CaseSetAttachmentResponse {
     }
 
     @JsonAnySetter
-    public void setAdditionalProperty(String name, Object value) {
+    public void setAdditionalProperty( String name, Object value ) {
         this.additionalProperties.put(name, value);
     }
 

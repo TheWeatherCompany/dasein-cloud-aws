@@ -12,12 +12,7 @@ import java.util.Map;
  * @since 18.08.2014
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({
-        "__type",
-        "categories",
-        "code",
-        "name"
-})
+@JsonPropertyOrder({"__type", "categories", "code", "name"})
 public class CaseServiceResponse {
 
     @JsonProperty("__type")
@@ -37,7 +32,7 @@ public class CaseServiceResponse {
         service.setCode(code);
         service.setName(name);
         List<org.dasein.cloud.platform.support.model.TicketCategory> list = new ArrayList<org.dasein.cloud.platform.support.model.TicketCategory>();
-        for(CaseCategoryResponse caseCategoryResponse : categories) {
+        for( CaseCategoryResponse caseCategoryResponse : categories ) {
             list.add(caseCategoryResponse.build());
         }
         service.setCategories(list);
@@ -50,7 +45,7 @@ public class CaseServiceResponse {
     }
 
     @JsonProperty("__type")
-    public void setType(String type) {
+    public void setType( String type ) {
         this.type = type;
     }
 
@@ -60,7 +55,7 @@ public class CaseServiceResponse {
     }
 
     @JsonProperty("categories")
-    public void setCategories(List<CaseCategoryResponse> categories) {
+    public void setCategories( List<CaseCategoryResponse> categories ) {
         this.categories = categories;
     }
 
@@ -70,7 +65,7 @@ public class CaseServiceResponse {
     }
 
     @JsonProperty("code")
-    public void setCode(String code) {
+    public void setCode( String code ) {
         this.code = code;
     }
 
@@ -80,7 +75,7 @@ public class CaseServiceResponse {
     }
 
     @JsonProperty("name")
-    public void setName(String name) {
+    public void setName( String name ) {
         this.name = name;
     }
 
@@ -90,7 +85,7 @@ public class CaseServiceResponse {
     }
 
     @JsonAnySetter
-    public void setAdditionalProperty(String name, Object value) {
+    public void setAdditionalProperty( String name, Object value ) {
         this.additionalProperties.put(name, value);
     }
 

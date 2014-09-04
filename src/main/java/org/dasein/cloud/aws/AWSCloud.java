@@ -1003,7 +1003,7 @@ public class AWSCloud extends AbstractCloud {
             lower.put(entry.getKey().toLowerCase(), entry.getValue());
         }
         String amzDate = headers.get(P_AWS_DATE);
-        if (amzDate == null) {
+        if( amzDate == null ) {
             amzDate = lower.get(P_AWS_DATE);
         }
         // expecting YYYYMMDDTHHMMSSZ

@@ -21,13 +21,14 @@ public class CaseCreateOptions {
     private CaseCreateOptions() {
     }
 
-    private CaseCreateOptions(TicketCreateOptions options) {
+    private CaseCreateOptions( TicketCreateOptions options ) {
         this._options = options;
     }
 
-    public static CaseCreateOptions getInstance(TicketCreateOptions options) {
-       return new CaseCreateOptions(options);
+    public static CaseCreateOptions getInstance( TicketCreateOptions options ) {
+        return new CaseCreateOptions(options);
     }
+
     @JsonProperty(value = "attachmentSetId")
     public String getAttachmentSetId() {
         return _options.getAttachmentSetId();

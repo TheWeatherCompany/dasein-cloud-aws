@@ -21,12 +21,12 @@ public class CaseListServicesOptions {
     private CaseListServicesOptions() {
     }
 
-    private CaseListServicesOptions(TicketListServicesOptions _options) {
+    private CaseListServicesOptions( TicketListServicesOptions _options ) {
         this._options = _options;
     }
 
-    public static CaseListServicesOptions getInstance(TicketListServicesOptions options) {
-       return new CaseListServicesOptions(options);
+    public static CaseListServicesOptions getInstance( TicketListServicesOptions options ) {
+        return new CaseListServicesOptions(options);
     }
 
     @JsonProperty(value = "language")

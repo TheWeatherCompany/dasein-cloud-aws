@@ -10,10 +10,7 @@ import java.util.Map;
  * @since 18.08.2014
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({
-        "code",
-        "name"
-})
+@JsonPropertyOrder({"code", "name"})
 public class CaseCategoryResponse {
 
     @JsonProperty("code")
@@ -37,7 +34,7 @@ public class CaseCategoryResponse {
     }
 
     @JsonProperty("code")
-    public void setCode(String code) {
+    public void setCode( String code ) {
         this.code = code;
     }
 
@@ -47,7 +44,7 @@ public class CaseCategoryResponse {
     }
 
     @JsonProperty("name")
-    public void setName(String name) {
+    public void setName( String name ) {
         this.name = name;
     }
 
@@ -57,7 +54,7 @@ public class CaseCategoryResponse {
     }
 
     @JsonAnySetter
-    public void setAdditionalProperty(String name, Object value) {
+    public void setAdditionalProperty( String name, Object value ) {
         this.additionalProperties.put(name, value);
     }
 

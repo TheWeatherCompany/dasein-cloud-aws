@@ -19,11 +19,11 @@ public class CaseAttachmentDataOptions {
     private CaseAttachmentDataOptions() {
     }
 
-    private CaseAttachmentDataOptions(TicketAttachmentDataOptions options) {
+    private CaseAttachmentDataOptions( TicketAttachmentDataOptions options ) {
         this._options = options;
     }
 
-    public static CaseAttachmentDataOptions getInstance(TicketAttachmentDataOptions data) {
+    public static CaseAttachmentDataOptions getInstance( TicketAttachmentDataOptions data ) {
         return new CaseAttachmentDataOptions(data);
     }
 

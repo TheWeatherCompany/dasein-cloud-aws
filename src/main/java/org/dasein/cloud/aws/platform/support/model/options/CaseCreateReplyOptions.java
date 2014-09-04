@@ -21,11 +21,11 @@ public class CaseCreateReplyOptions {
     private CaseCreateReplyOptions() {
     }
 
-    private CaseCreateReplyOptions(TicketCreateReplyOptions _options) {
+    private CaseCreateReplyOptions( TicketCreateReplyOptions _options ) {
         this._options = _options;
     }
 
-    public static CaseCreateReplyOptions getInstance(TicketCreateReplyOptions options) {
+    public static CaseCreateReplyOptions getInstance( TicketCreateReplyOptions options ) {
         return new CaseCreateReplyOptions(options);
     }
 

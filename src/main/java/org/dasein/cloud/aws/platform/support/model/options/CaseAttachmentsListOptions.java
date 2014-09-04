@@ -20,15 +20,15 @@ public class CaseAttachmentsListOptions {
     private CaseAttachmentsListOptions() {
     }
 
-    private CaseAttachmentsListOptions(TicketAttachmentsListOptions _options) {
+    private CaseAttachmentsListOptions( TicketAttachmentsListOptions _options ) {
         this._options = _options;
     }
 
-    public static CaseAttachmentsListOptions getInstance(TicketAttachmentsListOptions options) {
+    public static CaseAttachmentsListOptions getInstance( TicketAttachmentsListOptions options ) {
         return new CaseAttachmentsListOptions(options);
     }
 
-    public static CaseAttachmentsListOptions getInstance(TicketGetAttachmentOptions options) {
+    public static CaseAttachmentsListOptions getInstance( TicketGetAttachmentOptions options ) {
         TicketAttachmentsListOptions ticketAttachmentsListOptions = new TicketAttachmentsListOptions();
         ticketAttachmentsListOptions.setAttachmentId(options.getAttachmentId());
         return new CaseAttachmentsListOptions(ticketAttachmentsListOptions);

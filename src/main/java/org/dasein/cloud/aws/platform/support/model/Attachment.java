@@ -10,10 +10,7 @@ import java.util.Map;
  * @since 14.08.2014
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({
-        "attachmentId",
-        "fileName"
-})
+@JsonPropertyOrder({"attachmentId", "fileName"})
 public class Attachment {
 
     @JsonProperty("attachmentId")
@@ -37,7 +34,7 @@ public class Attachment {
     }
 
     @JsonProperty("attachmentId")
-    public void setAttachmentId(String attachmentId) {
+    public void setAttachmentId( String attachmentId ) {
         this.attachmentId = attachmentId;
     }
 
@@ -47,7 +44,7 @@ public class Attachment {
     }
 
     @JsonProperty("fileName")
-    public void setFileName(String fileName) {
+    public void setFileName( String fileName ) {
         this.fileName = fileName;
     }
 
@@ -57,7 +54,7 @@ public class Attachment {
     }
 
     @JsonAnySetter
-    public void setAdditionalProperty(String name, Object value) {
+    public void setAdditionalProperty( String name, Object value ) {
         this.additionalProperties.put(name, value);
     }
 }

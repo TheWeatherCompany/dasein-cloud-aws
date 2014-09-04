@@ -114,7 +114,7 @@ public class CaseSupport extends AbstractTicketService {
 
             Case caze = getCase(CaseListOptions.getInstance(options));
             Ticket ticket = caze.buildTicket();
-            if( isIncludeReplies!= null && isIncludeReplies ) {
+            if( isIncludeReplies != null && isIncludeReplies ) {
                 ticket = fillTicketReplies(ticket);
             }
             return ticket;

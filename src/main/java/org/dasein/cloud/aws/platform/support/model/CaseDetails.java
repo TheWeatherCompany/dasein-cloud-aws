@@ -1,4 +1,3 @@
-
 package org.dasein.cloud.aws.platform.support.model;
 
 import com.fasterxml.jackson.annotation.*;
@@ -9,10 +8,7 @@ import java.util.List;
 import java.util.Map;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({
-        "cases",
-        "nextToken"
-})
+@JsonPropertyOrder({"cases", "nextToken"})
 public class CaseDetails {
 
     @JsonProperty("cases")
@@ -28,7 +24,7 @@ public class CaseDetails {
     }
 
     @JsonProperty("cases")
-    public void setCases(List<Case> cases) {
+    public void setCases( List<Case> cases ) {
         this.cases = cases;
     }
 
@@ -38,7 +34,7 @@ public class CaseDetails {
     }
 
     @JsonProperty(value = "nextToken")
-    public void setNextToken(String nextToken) {
+    public void setNextToken( String nextToken ) {
         this.nextToken = nextToken;
     }
 
@@ -48,7 +44,7 @@ public class CaseDetails {
     }
 
     @JsonAnySetter
-    public void setAdditionalProperty(String name, Object value) {
+    public void setAdditionalProperty( String name, Object value ) {
         this.additionalProperties.put(name, value);
     }
 

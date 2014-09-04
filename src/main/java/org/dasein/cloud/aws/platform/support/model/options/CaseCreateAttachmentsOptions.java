@@ -23,18 +23,18 @@ public class CaseCreateAttachmentsOptions {
     private CaseCreateAttachmentsOptions() {
     }
 
-    private CaseCreateAttachmentsOptions(TicketCreateAttachmentsOptions options) {
+    private CaseCreateAttachmentsOptions( TicketCreateAttachmentsOptions options ) {
         this._options = options;
     }
 
-    public static CaseCreateAttachmentsOptions getInstance(TicketCreateAttachmentsOptions options) {
+    public static CaseCreateAttachmentsOptions getInstance( TicketCreateAttachmentsOptions options ) {
         return new CaseCreateAttachmentsOptions(options);
     }
 
     @JsonProperty("attachments")
     public List<CaseAttachmentDataOptions> getAttachments() {
         List<CaseAttachmentDataOptions> attachments = new ArrayList<CaseAttachmentDataOptions>();
-        for(TicketAttachmentDataOptions data:_options.getAttachments()) {
+        for( TicketAttachmentDataOptions data : _options.getAttachments() ) {
             attachments.add(CaseAttachmentDataOptions.getInstance(data));
         }
         return attachments;

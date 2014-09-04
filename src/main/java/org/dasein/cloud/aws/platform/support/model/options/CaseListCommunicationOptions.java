@@ -13,7 +13,7 @@ import java.util.Map;
  * User: Eugene Yaroslavtsev
  * Date: 21.08.2014
  */
-@JsonInclude(JsonInclude.Include.NON_NULL)
+@JsonInclude( JsonInclude.Include.NON_NULL )
 public class CaseListCommunicationOptions {
 
     @JsonIgnore
@@ -22,41 +22,41 @@ public class CaseListCommunicationOptions {
     private CaseListCommunicationOptions() {
     }
 
-    private CaseListCommunicationOptions(TicketListRepliesOptions _options) {
+    private CaseListCommunicationOptions( TicketListRepliesOptions _options ) {
         this._options = _options;
     }
 
-    public static CaseListCommunicationOptions getInstance(TicketListRepliesOptions options){
+    public static CaseListCommunicationOptions getInstance( TicketListRepliesOptions options ) {
         options.setMaxResults(100);
         return new CaseListCommunicationOptions(options);
     }
 
-    @JsonProperty("afterTime")
+    @JsonProperty( "afterTime" )
     public String getAfterTime() {
         return _options.getAfterTime();
     }
 
-    @JsonProperty("beforeTime")
+    @JsonProperty( "beforeTime" )
     public String getBeforeTime() {
         return _options.getBeforeTime();
     }
 
-    @JsonProperty("caseId")
+    @JsonProperty( "caseId" )
     public String getCaseId() {
         return _options.getTicketId();
     }
 
-    @JsonProperty("maxResults")
+    @JsonProperty( "maxResults" )
     public Integer getMaxResults() {
         return _options.getMaxResults();
     }
 
-    @JsonProperty("nextToken")
+    @JsonProperty( "nextToken" )
     public String getNextToken() {
         return _options.getNextToken();
     }
 
-    public void setNextToken(String nextToken) {
+    public void setNextToken( String nextToken ) {
         _options.setNextToken(nextToken);
     }
 

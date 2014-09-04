@@ -10,7 +10,7 @@ public class CommunicationWithCcEmails {
     private List<Communication> communication;
     private List<String> ccEmailAddresses;
 
-    public CommunicationWithCcEmails(List<Communication> communication, List<String> ccEmailAddresses) {
+    public CommunicationWithCcEmails( List<Communication> communication, List<String> ccEmailAddresses ) {
         this.communication = communication;
         this.ccEmailAddresses = ccEmailAddresses;
     }
@@ -19,7 +19,7 @@ public class CommunicationWithCcEmails {
         return communication;
     }
 
-    public void setCommunication(List<Communication> communication) {
+    public void setCommunication( List<Communication> communication ) {
         this.communication = communication;
     }
 
@@ -27,7 +27,7 @@ public class CommunicationWithCcEmails {
         return ccEmailAddresses;
     }
 
-    public void setCcEmailAddresses(List<String> ccEmailAddresses) {
+    public void setCcEmailAddresses( List<String> ccEmailAddresses ) {
         this.ccEmailAddresses = ccEmailAddresses;
     }
 }

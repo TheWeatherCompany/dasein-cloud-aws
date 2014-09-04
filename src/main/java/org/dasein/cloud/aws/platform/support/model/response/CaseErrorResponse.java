@@ -25,7 +25,7 @@ public class CaseErrorResponse {
     }
 
     @JsonProperty(value = "__type")
-    public void setType(String type) {
+    public void setType( String type ) {
         this.type = type;
     }
 
@@ -35,7 +35,7 @@ public class CaseErrorResponse {
     }
 
     @JsonProperty(value = "message")
-    public void setMessage(String message) {
+    public void setMessage( String message ) {
         this.message = message;
     }
 
@@ -45,7 +45,7 @@ public class CaseErrorResponse {
     }
 
     @JsonAnySetter
-    public void setAdditionalProperty(String name, Object value) {
+    public void setAdditionalProperty( String name, Object value ) {
         this.additionalProperties.put(name, value);
     }
 }

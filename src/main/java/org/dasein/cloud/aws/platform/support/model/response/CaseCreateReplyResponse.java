@@ -24,7 +24,7 @@ public class CaseCreateReplyResponse {
     }
 
     @JsonProperty(value = "result")
-    public void setResult(String result) {
+    public void setResult( String result ) {
         this.result = result;
     }
 
@@ -34,7 +34,7 @@ public class CaseCreateReplyResponse {
     }
 
     @JsonAnySetter
-    public void setAdditionalProperty(String name, Object value) {
+    public void setAdditionalProperty( String name, Object value ) {
         this.additionalProperties.put(name, value);
     }
 }

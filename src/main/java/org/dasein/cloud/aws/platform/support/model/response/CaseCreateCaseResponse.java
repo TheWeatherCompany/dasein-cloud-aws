@@ -23,7 +23,7 @@ public class CaseCreateCaseResponse {
     }
 
     @JsonProperty(value = "caseId")
-    public void setCaseId(String caseId) {
+    public void setCaseId( String caseId ) {
         this.caseId = caseId;
     }
 
@@ -33,7 +33,7 @@ public class CaseCreateCaseResponse {
     }
 
     @JsonAnySetter
-    public void setAdditionalProperty(String name, Object value) {
+    public void setAdditionalProperty( String name, Object value ) {
         this.additionalProperties.put(name, value);
     }
 }

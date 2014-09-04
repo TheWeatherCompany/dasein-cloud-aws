@@ -11,7 +11,6 @@ import org.dasein.cloud.CloudException;
 import org.dasein.cloud.InternalException;
 import org.dasein.cloud.aws.AWSCloud;
 import org.dasein.cloud.aws.platform.support.model.response.CaseErrorResponse;
-import org.dasein.cloud.aws.storage.Glacier;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.*;
@@ -36,7 +35,7 @@ public class CaseSupportMethod {
     private AWSCloud provider;
     private CaseSupportTarget AMZ_TARGET;
 
-    public CaseSupportMethod(AWSCloud provider, CaseSupportTarget target) {
+    public CaseSupportMethod( AWSCloud provider, CaseSupportTarget target ) {
         this.provider = provider;
         this.AMZ_TARGET = target;
     }
@@ -45,7 +44,7 @@ public class CaseSupportMethod {
         return invoke(bodyText);
     }
 
-    public String invoke(String request_parameters) throws CloudException, InternalException {
+    public String invoke( String request_parameters ) throws CloudException, InternalException {
         if( wire.isDebugEnabled() ) {
             wire.debug("");
             wire.debug("----------------------------------------------------------------------------------");
@@ -60,11 +59,11 @@ public class CaseSupportMethod {
         }
     }
 
-    private String invoke(String request_parameters, int attempts) throws CloudException, InternalException {
+    private String invoke( String request_parameters, int attempts ) throws CloudException, InternalException {
 
         HttpClient httpClient = null;
         try {
-            if (request_parameters != null) {
+            if( request_parameters != null ) {
                 bodyText = request_parameters;
             }
             httpClient = provider.getClient();
@@ -76,7 +75,7 @@ public class CaseSupportMethod {
             map.put("X-Amz-Target", AMZ_TARGET.getTarget());
             HttpPost request = new HttpPost(URL);
 
-            for (Entry<String, String> enumSet : map.entrySet()) {
+            for( Entry<String, String> enumSet : map.entrySet() ) {
                 request.addHeader(enumSet.getKey(), enumSet.getValue());
             }
             map.put("host", new URI(URL).getHost());
@@ -87,10 +86,10 @@ public class CaseSupportMethod {
                 HttpResponse response = httpClient.execute(request);
 
                 int status = response.getStatusLine().getStatusCode();
-                if (status == HttpServletResponse.SC_OK) {
+                if( status == HttpServletResponse.SC_OK ) {
                     return getContent(response.getEntity().getContent());
-                } else if(status == HttpServletResponse.SC_SERVICE_UNAVAILABLE ||
-                        status == HttpServletResponse.SC_INTERNAL_SERVER_ERROR) {
+                }
+                else if( status == HttpServletResponse.SC_SERVICE_UNAVAILABLE || status == HttpServletResponse.SC_INTERNAL_SERVER_ERROR ) {
 
                     if( attempts >= 5 ) {
                         String msg;
@@ -107,19 +106,20 @@ public class CaseSupportMethod {
                     else {
                         try {
                             Thread.sleep(5000L);
-                        } catch (InterruptedException e) {
+                        } catch( InterruptedException e ) {
                             // ignore me
                         }
                         return invoke(request_parameters, ++attempts);
                     }
 
-                } else {
+                }
+                else {
                     String code = "0"; //todo
                     String message;
                     try {
                         CaseErrorResponse caseErrorResponse = new ObjectMapper().readValue(getContent(response.getEntity().getContent()), CaseErrorResponse.class);
                         message = caseErrorResponse.getMessage();
-                    } catch (CloudException e) {
+                    } catch( CloudException e ) {
                         logger.error(e);
                         message = e.getMessage();
                     }
@@ -127,33 +127,32 @@ public class CaseSupportMethod {
                     throw new CloudException(CloudErrorType.GENERAL, status, code, message);
                 }
 
-            } catch (IOException e) {
+            } catch( IOException e ) {
                 logger.error("I/O error from server communications: " + e.getMessage());
                 throw new InternalException(e);
             }
-        } catch (URISyntaxException e) {
+        } catch( URISyntaxException e ) {
             logger.error(e.getMessage());
             throw new CloudException("Unable to get host from url");
         } finally {
-            if (httpClient != null) {
+            if( httpClient != null ) {
                 httpClient.getConnectionManager().shutdown();
             }
         }
     }
 
-    private String getAuthorizationHeader(Map<String,String> paramsForHeader) throws InternalException {
+    private String getAuthorizationHeader( Map<String, String> paramsForHeader ) throws InternalException {
         final String accessId;
         final String secret;
         try {
             accessId = new String(provider.getAccessKey(provider.getContext())[0], "utf-8");
             secret = new String(provider.getAccessKey(provider.getContext())[1], "utf-8");
-        } catch (UnsupportedEncodingException e) {
+        } catch( UnsupportedEncodingException e ) {
             logger.error(e.getMessage());
             throw new InternalException(e);
         }
 
-        return provider.getV4Authorization(accessId, secret,
-                "POST", URL, service, paramsForHeader, getRequestBodyHash());
+        return provider.getV4Authorization(accessId, secret, "POST", URL, service, paramsForHeader, getRequestBodyHash());
 
 
     }
@@ -161,38 +160,39 @@ public class CaseSupportMethod {
     private static StringEntity getParameters() throws InternalException {
         try {
             return new StringEntity(bodyText);
-        } catch (UnsupportedEncodingException e) {
+        } catch( UnsupportedEncodingException e ) {
             throw new InternalException(e);
         }
     }
 
     private static String getRequestBodyHash() throws InternalException {
-        if (bodyText == null) {
+        if( bodyText == null ) {
             return AWSCloud.computeSHA256Hash("{}");
-        } else {
+        }
+        else {
             return AWSCloud.computeSHA256Hash(bodyText);
         }
     }
 
-    public static String getContent(InputStream responseBodyAsStream) throws CloudException {
+    public static String getContent( InputStream responseBodyAsStream ) throws CloudException {
         BufferedReader in = null;
         try {
             in = new BufferedReader(new InputStreamReader(responseBodyAsStream));
             StringBuilder sb = new StringBuilder();
             String line;
 
-            while ((line = in.readLine()) != null) {
+            while( ( line = in.readLine() ) != null ) {
                 sb.append(line);
                 sb.append("\n");
             }
             return sb.toString();
-        } catch (IOException e) {
+        } catch( IOException e ) {
             throw new CloudException("Unable to get content from response: " + e.getMessage(), e);
         } finally {
-            if (in != null) {
+            if( in != null ) {
                 try {
                     in.close();
-                } catch (IOException e) {
+                } catch( IOException e ) {
                     // Ignore
                 }
             }

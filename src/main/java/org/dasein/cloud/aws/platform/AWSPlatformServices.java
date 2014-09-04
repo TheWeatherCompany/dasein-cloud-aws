@@ -59,6 +59,6 @@ public class AWSPlatformServices extends AbstractPlatformServices {
 
     @Override
     public @Nonnull TicketService getSupportService() {
-        return new CaseSupport( cloud );
+        return new CaseSupport(cloud);
     }
 }

@@ -12,49 +12,35 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-@JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({
-        "__type",
-        "caseId",
-        "categoryCode",
-        "ccEmailAddresses",
-        "displayId",
-        "language",
-        "recentCommunications",
-        "serviceCode",
-        "severityCode",
-        "status",
-        "subject",
-        "submittedBy",
-        "timeCreated"
-})
+@JsonInclude( JsonInclude.Include.NON_NULL )
+@JsonPropertyOrder( {"__type", "caseId", "categoryCode", "ccEmailAddresses", "displayId", "language", "recentCommunications", "serviceCode", "severityCode", "status", "subject", "submittedBy", "timeCreated"} )
 public class Case {
 
-    @JsonProperty("__type")
+    @JsonProperty( "__type" )
     private String type;
-    @JsonProperty("caseId")
+    @JsonProperty( "caseId" )
     private String caseId;
-    @JsonProperty("categoryCode")
+    @JsonProperty( "categoryCode" )
     private String categoryCode;
-    @JsonProperty("ccEmailAddresses")
+    @JsonProperty( "ccEmailAddresses" )
     private List<String> ccEmailAddresses = new ArrayList<String>();
-    @JsonProperty("displayId")
+    @JsonProperty( "displayId" )
     private String displayId;
-    @JsonProperty("language")
+    @JsonProperty( "language" )
     private String language;
-    @JsonProperty("recentCommunications")
+    @JsonProperty( "recentCommunications" )
     private RecentCommunications recentCommunications;
-    @JsonProperty("serviceCode")
+    @JsonProperty( "serviceCode" )
     private String serviceCode;
-    @JsonProperty("severityCode")
+    @JsonProperty( "severityCode" )
     private String severityCode;
-    @JsonProperty("status")
+    @JsonProperty( "status" )
     private String status;
-    @JsonProperty("subject")
+    @JsonProperty( "subject" )
     private String subject;
-    @JsonProperty("submittedBy")
+    @JsonProperty( "submittedBy" )
     private String submittedBy;
-    @JsonProperty("timeCreated")
+    @JsonProperty( "timeCreated" )
     private String timeCreated;
     @JsonIgnore
     private Map<String, Object> additionalProperties = new HashMap<String, Object>();
@@ -68,148 +54,148 @@ public class Case {
         ticket.setDisplayId(displayId);
         ticket.setLanguage(language);
         List<TicketReply> replies = new ArrayList<TicketReply>();
-        if (recentCommunications != null) {
-            for (Communication communication : recentCommunications.getCommunications()) {
+        if( recentCommunications != null ) {
+            for( Communication communication : recentCommunications.getCommunications() ) {
                 replies.add(communication.buildReply());
             }
         }
         ticket.setRecentReplies(replies);
         ticket.setServiceCode(serviceCode);
-        ticket.setSeverityCode(TicketSeverity.valueOf((Object) severityCode));
-        ticket.setStatus(CaseStatus.buildTicketStatus(CaseStatus.valueOf((Object) status)));
+        ticket.setSeverityCode(TicketSeverity.valueOf(( Object ) severityCode));
+        ticket.setStatus(CaseStatus.buildTicketStatus(CaseStatus.valueOf(( Object ) status)));
         ticket.setSubject(subject);
         ticket.setSubmittedBy(submittedBy);
         ticket.setTimeCreated(timeCreated);
         return ticket;
     }
 
-    @JsonProperty("__type")
+    @JsonProperty( "__type" )
     public String getType() {
         return type;
     }
 
-    @JsonProperty("__type")
-    public void setType(String type) {
+    @JsonProperty( "__type" )
+    public void setType( String type ) {
         this.type = type;
     }
 
-    @JsonProperty("caseId")
+    @JsonProperty( "caseId" )
     public String getCaseId() {
         return caseId;
     }
 
-    @JsonProperty("caseId")
-    public void setCaseId(String caseId) {
+    @JsonProperty( "caseId" )
+    public void setCaseId( String caseId ) {
         this.caseId = caseId;
     }
 
-    @JsonProperty("categoryCode")
+    @JsonProperty( "categoryCode" )
     public String getCategoryCode() {
         return categoryCode;
     }
 
-    @JsonProperty("categoryCode")
-    public void setCategoryCode(String categoryCode) {
+    @JsonProperty( "categoryCode" )
+    public void setCategoryCode( String categoryCode ) {
         this.categoryCode = categoryCode;
     }
 
-    @JsonProperty("ccEmailAddresses")
+    @JsonProperty( "ccEmailAddresses" )
     public List<String> getCcEmailAddresses() {
         return ccEmailAddresses;
     }
 
-    @JsonProperty("ccEmailAddresses")
-    public void setCcEmailAddresses(List<String> ccEmailAddresses) {
+    @JsonProperty( "ccEmailAddresses" )
+    public void setCcEmailAddresses( List<String> ccEmailAddresses ) {
         this.ccEmailAddresses = ccEmailAddresses;
     }
 
-    @JsonProperty("displayId")
+    @JsonProperty( "displayId" )
     public String getDisplayId() {
         return displayId;
     }
 
-    @JsonProperty("displayId")
-    public void setDisplayId(String displayId) {
+    @JsonProperty( "displayId" )
+    public void setDisplayId( String displayId ) {
         this.displayId = displayId;
     }
 
-    @JsonProperty("language")
+    @JsonProperty( "language" )
     public String getLanguage() {
         return language;
     }
 
-    @JsonProperty("language")
-    public void setLanguage(String language) {
+    @JsonProperty( "language" )
+    public void setLanguage( String language ) {
         this.language = language;
     }
 
-    @JsonProperty("recentCommunications")
+    @JsonProperty( "recentCommunications" )
     public RecentCommunications getRecentCommunications() {
         return recentCommunications;
     }
 
-    @JsonProperty("recentCommunications")
-    public void setRecentCommunications(RecentCommunications recentCommunications) {
+    @JsonProperty( "recentCommunications" )
+    public void setRecentCommunications( RecentCommunications recentCommunications ) {
         this.recentCommunications = recentCommunications;
     }
 
-    @JsonProperty("serviceCode")
+    @JsonProperty( "serviceCode" )
     public String getServiceCode() {
         return serviceCode;
     }
 
-    @JsonProperty("serviceCode")
-    public void setServiceCode(String serviceCode) {
+    @JsonProperty( "serviceCode" )
+    public void setServiceCode( String serviceCode ) {
         this.serviceCode = serviceCode;
     }
 
-    @JsonProperty("severityCode")
+    @JsonProperty( "severityCode" )
     public String getSeverityCode() {
         return severityCode;
     }
 
-    @JsonProperty("severityCode")
-    public void setSeverityCode(String severityCode) {
+    @JsonProperty( "severityCode" )
+    public void setSeverityCode( String severityCode ) {
         this.severityCode = severityCode;
     }
 
-    @JsonProperty("status")
+    @JsonProperty( "status" )
     public String getStatus() {
         return status;
     }
 
-    @JsonProperty("status")
-    public void setStatus(String status) {
+    @JsonProperty( "status" )
+    public void setStatus( String status ) {
         this.status = status;
     }
 
-    @JsonProperty("subject")
+    @JsonProperty( "subject" )
     public String getSubject() {
         return subject;
     }
 
-    @JsonProperty("subject")
-    public void setSubject(String subject) {
+    @JsonProperty( "subject" )
+    public void setSubject( String subject ) {
         this.subject = subject;
     }
 
-    @JsonProperty("submittedBy")
+    @JsonProperty( "submittedBy" )
     public String getSubmittedBy() {
         return submittedBy;
     }
 
-    @JsonProperty("submittedBy")
-    public void setSubmittedBy(String submittedBy) {
+    @JsonProperty( "submittedBy" )
+    public void setSubmittedBy( String submittedBy ) {
         this.submittedBy = submittedBy;
     }
 
-    @JsonProperty("timeCreated")
+    @JsonProperty( "timeCreated" )
     public String getTimeCreated() {
         return timeCreated;
     }
 
-    @JsonProperty("timeCreated")
-    public void setTimeCreated(String timeCreated) {
+    @JsonProperty( "timeCreated" )
+    public void setTimeCreated( String timeCreated ) {
         this.timeCreated = timeCreated;
     }
 
@@ -219,7 +205,7 @@ public class Case {
     }
 
     @JsonAnySetter
-    public void setAdditionalProperty(String name, Object value) {
+    public void setAdditionalProperty( String name, Object value ) {
         this.additionalProperties.put(name, value);
     }
 

@@ -12,9 +12,7 @@ import java.util.Map;
  * @since 18.08.2014
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({
-        "services"
-})
+@JsonPropertyOrder({"services"})
 public class CaseListServicesResponse {
 
     @JsonProperty("services")
@@ -28,7 +26,7 @@ public class CaseListServicesResponse {
     }
 
     @JsonProperty("services")
-    public void setCaseServiceResponses(List<CaseServiceResponse> caseServiceResponses) {
+    public void setCaseServiceResponses( List<CaseServiceResponse> caseServiceResponses ) {
         this.caseServiceResponses = caseServiceResponses;
     }
 
@@ -38,7 +36,7 @@ public class CaseListServicesResponse {
     }
 
     @JsonAnySetter
-    public void setAdditionalProperty(String name, Object value) {
+    public void setAdditionalProperty( String name, Object value ) {
         this.additionalProperties.put(name, value);
     }
 

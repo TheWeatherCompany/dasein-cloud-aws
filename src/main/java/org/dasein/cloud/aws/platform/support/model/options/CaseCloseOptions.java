@@ -19,11 +19,11 @@ public class CaseCloseOptions {
     private CaseCloseOptions() {
     }
 
-    private CaseCloseOptions(TicketCloseOptions _options) {
+    private CaseCloseOptions( TicketCloseOptions _options ) {
         this._options = _options;
     }
 
-    public static CaseCloseOptions getInstance(TicketCloseOptions options) {
+    public static CaseCloseOptions getInstance( TicketCloseOptions options ) {
         return new CaseCloseOptions(options);
     }
 
