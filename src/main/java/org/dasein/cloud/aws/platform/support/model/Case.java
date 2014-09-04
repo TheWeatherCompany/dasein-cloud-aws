@@ -4,8 +4,8 @@ import com.fasterxml.jackson.annotation.*;
 import org.dasein.cloud.CloudException;
 import org.dasein.cloud.aws.platform.support.CaseStatus;
 import org.dasein.cloud.platform.support.TicketSeverity;
-import org.dasein.cloud.platform.support.model.TicketReply;
 import org.dasein.cloud.platform.support.model.Ticket;
+import org.dasein.cloud.platform.support.model.TicketReply;
 
 import java.util.ArrayList;
 import java.util.HashMap;

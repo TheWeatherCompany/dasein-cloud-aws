@@ -8,19 +8,19 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-@JsonInclude( JsonInclude.Include.NON_NULL )
-@JsonPropertyOrder( {"attachmentSet", "body", "caseId", "submittedBy", "timeCreated"} )
+@JsonInclude(JsonInclude.Include.NON_NULL)
+@JsonPropertyOrder({"attachmentSet", "body", "caseId", "submittedBy", "timeCreated"})
 public class Communication {
 
-    @JsonProperty( "attachmentSet" )
+    @JsonProperty("attachmentSet")
     private List<Attachment> attachmentSet;
-    @JsonProperty( "body" )
+    @JsonProperty("body")
     private String body;
-    @JsonProperty( "caseId" )
+    @JsonProperty("caseId")
     private String caseId;
-    @JsonProperty( "submittedBy" )
+    @JsonProperty("submittedBy")
     private String submittedBy;
-    @JsonProperty( "timeCreated" )
+    @JsonProperty("timeCreated")
     private String timeCreated;
     @JsonIgnore
     private Map<String, Object> additionalProperties = new HashMap<String, Object>();
@@ -40,52 +40,52 @@ public class Communication {
         return reply;
     }
 
-    @JsonProperty( "attachmentSet" )
+    @JsonProperty("attachmentSet")
     public List<Attachment> getAttachmentSet() {
         return attachmentSet;
     }
 
-    @JsonProperty( "attachmentSet" )
+    @JsonProperty("attachmentSet")
     public void setAttachmentSet( List<Attachment> attachmentSet ) {
         this.attachmentSet = attachmentSet;
     }
 
-    @JsonProperty( "body" )
+    @JsonProperty("body")
     public String getBody() {
         return body;
     }
 
-    @JsonProperty( "body" )
+    @JsonProperty("body")
     public void setBody( String body ) {
         this.body = body;
     }
 
-    @JsonProperty( "caseId" )
+    @JsonProperty("caseId")
     public String getCaseId() {
         return caseId;
     }
 
-    @JsonProperty( "caseId" )
+    @JsonProperty("caseId")
     public void setCaseId( String caseId ) {
         this.caseId = caseId;
     }
 
-    @JsonProperty( "submittedBy" )
+    @JsonProperty("submittedBy")
     public String getSubmittedBy() {
         return submittedBy;
     }
 
-    @JsonProperty( "submittedBy" )
+    @JsonProperty("submittedBy")
     public void setSubmittedBy( String submittedBy ) {
         this.submittedBy = submittedBy;
     }
 
-    @JsonProperty( "timeCreated" )
+    @JsonProperty("timeCreated")
     public String getTimeCreated() {
         return timeCreated;
     }
 
-    @JsonProperty( "timeCreated" )
+    @JsonProperty("timeCreated")
     public void setTimeCreated( String timeCreated ) {
         this.timeCreated = timeCreated;
     }

@@ -3,11 +3,7 @@ package org.dasein.cloud.aws.platform.support.model.options;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import org.dasein.cloud.platform.support.model.options.TicketListRepliesOptions;
-
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * User: Eugene Yaroslavtsev
@@ -18,17 +14,19 @@ public class CaseListCommunicationOptions {
 
     @JsonIgnore
     private TicketListRepliesOptions _options;
+    @JsonIgnore
+    private String _nextToken;
 
     private CaseListCommunicationOptions() {
     }
 
-    private CaseListCommunicationOptions( TicketListRepliesOptions _options ) {
-        this._options = _options;
+    private CaseListCommunicationOptions( TicketListRepliesOptions options, String nextToken ) {
+        this._nextToken = nextToken;
+        this._options = options;
     }
 
     public static CaseListCommunicationOptions getInstance( TicketListRepliesOptions options ) {
-        options.setMaxResults(100);
-        return new CaseListCommunicationOptions(options);
+        return new CaseListCommunicationOptions(options, null);
     }
 
     @JsonProperty( "afterTime" )
@@ -48,17 +46,17 @@ public class CaseListCommunicationOptions {
 
     @JsonProperty( "maxResults" )
     public Integer getMaxResults() {
-        return _options.getMaxResults();
+        return 100;
     }
 
     @JsonProperty( "nextToken" )
     public String getNextToken() {
-        return _options.getNextToken();
+        return _nextToken;
     }
 
+    @JsonIgnore
     public void setNextToken( String nextToken ) {
-        _options.setNextToken(nextToken);
+        _nextToken = nextToken;
     }
-
 
 }
