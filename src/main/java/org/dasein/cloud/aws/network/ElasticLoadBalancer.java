@@ -1387,9 +1387,10 @@ public class ElasticLoadBalancer extends AbstractLoadBalancerSupport<AWSCloud> {
                 protocol = LoadBalancerHealthCheck.HCProtocol.valueOf(parts[0]);
 
                 int index = parts[1].indexOf("/");
-                if (index == -1) {
+                if( index == -1 ) {
                     port = Integer.parseInt(parts[1]);
-                } else {
+                }
+                else {
                     port = Integer.parseInt(parts[1].substring(0, index));
                     path = parts[1].substring(index, parts[1].length());
                 }
