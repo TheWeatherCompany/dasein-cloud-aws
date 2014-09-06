@@ -725,7 +725,7 @@ public class ElasticLoadBalancer extends AbstractLoadBalancerSupport<AWSCloud> {
                     Node item = items.item(j);
 
                     if( item.getNodeName().equals("member") ) {
-                        LoadBalancer loadBalancer = toLoadBalancer( item );
+                        LoadBalancer loadBalancer = toLoadBalancer(item);
 
                         if( loadBalancer != null ) {
                             list.add(loadBalancer);
@@ -1385,16 +1385,14 @@ public class ElasticLoadBalancer extends AbstractLoadBalancerSupport<AWSCloud> {
                 String targetString = attr.getFirstChild().getNodeValue();
                 String[] parts = targetString.split(":");
                 protocol = LoadBalancerHealthCheck.HCProtocol.valueOf(parts[0]);
-                if( parts[1].endsWith("/") ) {
-                    port = Integer.parseInt(parts[1].substring(0, parts[1].length() - 1));
-                    path = "/";
+
+                int index = parts[1].indexOf("/");
+                if( index == -1 ) {
+                    port = Integer.parseInt(parts[1]);
                 }
                 else {
-                    String[] portAndPath = parts[1].split("/");
-                    port = Integer.parseInt(portAndPath[0]);
-                    if( portAndPath.length > 1 ) {
-                        path = "/" + portAndPath[1];
-                    }
+                    port = Integer.parseInt(parts[1].substring(0, index));
+                    path = parts[1].substring(index, parts[1].length());
                 }
             }
             else if( name.equals("healthythreshold") ) {
