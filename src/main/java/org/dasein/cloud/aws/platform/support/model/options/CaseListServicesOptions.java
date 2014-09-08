@@ -10,7 +10,7 @@ import org.dasein.cloud.platform.support.model.options.TicketListServicesOptions
  * @author Eugene Yaroslavtsev
  * @since 18.08.2014
  */
-@JsonInclude(Include.NON_NULL)
+@JsonInclude( Include.NON_NULL )
 public class CaseListServicesOptions {
 
     @JsonIgnore
@@ -27,7 +27,7 @@ public class CaseListServicesOptions {
         return new CaseListServicesOptions(options);
     }
 
-    @JsonProperty(value = "language")
+    @JsonProperty( value = "language" )
     public String getLanguage() {
         return _options.getLanguage();
     }

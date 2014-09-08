@@ -9,20 +9,20 @@ import java.util.Map;
  * @author Eugene Yaroslavtsev
  * @since 15.08.2014
  */
-@JsonInclude(JsonInclude.Include.NON_NULL)
+@JsonInclude( JsonInclude.Include.NON_NULL )
 public class CaseCreateCaseResponse {
 
-    @JsonProperty(value = "caseId")
+    @JsonProperty( value = "caseId" )
     private String caseId;
     @JsonIgnore
     private Map<String, Object> additionalProperties = new HashMap<String, Object>();
 
-    @JsonProperty(value = "caseId")
+    @JsonProperty( value = "caseId" )
     public String getCaseId() {
         return caseId;
     }
 
-    @JsonProperty(value = "caseId")
+    @JsonProperty( value = "caseId" )
     public void setCaseId( String caseId ) {
         this.caseId = caseId;
     }

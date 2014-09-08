@@ -11,21 +11,21 @@ import java.util.Map;
  * @author Eugene Yaroslavtsev
  * @since 18.08.2014
  */
-@JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({"services"})
+@JsonInclude( JsonInclude.Include.NON_NULL )
+@JsonPropertyOrder( {"services"} )
 public class CaseListServicesResponse {
 
-    @JsonProperty("services")
+    @JsonProperty( "services" )
     private List<CaseServiceResponse> caseServiceResponses = new ArrayList<CaseServiceResponse>();
     @JsonIgnore
     private Map<String, Object> additionalProperties = new HashMap<String, Object>();
 
-    @JsonProperty("services")
+    @JsonProperty( "services" )
     public List<CaseServiceResponse> getCaseServiceResponses() {
         return caseServiceResponses;
     }
 
-    @JsonProperty("services")
+    @JsonProperty( "services" )
     public void setCaseServiceResponses( List<CaseServiceResponse> caseServiceResponses ) {
         this.caseServiceResponses = caseServiceResponses;
     }

@@ -12,17 +12,17 @@ import java.util.Map;
  * @author Eugene Yaroslavtsev
  * @since 18.08.2014
  */
-@JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({"__type", "categories", "code", "name"})
+@JsonInclude( JsonInclude.Include.NON_NULL )
+@JsonPropertyOrder( {"__type", "categories", "code", "name"} )
 public class CaseServiceResponse {
 
-    @JsonProperty("__type")
+    @JsonProperty( "__type" )
     private String type;
-    @JsonProperty("categories")
+    @JsonProperty( "categories" )
     private List<CaseCategoryResponse> categories = new ArrayList<CaseCategoryResponse>();
-    @JsonProperty("code")
+    @JsonProperty( "code" )
     private String code;
-    @JsonProperty("name")
+    @JsonProperty( "name" )
     private String name;
     @JsonIgnore
     private Map<String, Object> additionalProperties = new HashMap<String, Object>();
@@ -40,42 +40,42 @@ public class CaseServiceResponse {
         return service;
     }
 
-    @JsonProperty("__type")
+    @JsonProperty( "__type" )
     public String getType() {
         return type;
     }
 
-    @JsonProperty("__type")
+    @JsonProperty( "__type" )
     public void setType( String type ) {
         this.type = type;
     }
 
-    @JsonProperty("categories")
+    @JsonProperty( "categories" )
     public List<CaseCategoryResponse> getCategories() {
         return categories;
     }
 
-    @JsonProperty("categories")
+    @JsonProperty( "categories" )
     public void setCategories( List<CaseCategoryResponse> categories ) {
         this.categories = categories;
     }
 
-    @JsonProperty("code")
+    @JsonProperty( "code" )
     public String getCode() {
         return code;
     }
 
-    @JsonProperty("code")
+    @JsonProperty( "code" )
     public void setCode( String code ) {
         this.code = code;
     }
 
-    @JsonProperty("name")
+    @JsonProperty( "name" )
     public String getName() {
         return name;
     }
 
-    @JsonProperty("name")
+    @JsonProperty( "name" )
     public void setName( String name ) {
         this.name = name;
     }

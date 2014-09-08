@@ -11,15 +11,15 @@ import java.util.Map;
  * User: Eugene Yaroslavtsev
  * Date: 20.08.2014
  */
-@JsonInclude(Include.NON_NULL)
-@JsonPropertyOrder({"__type", "data", "fileName"})
+@JsonInclude( Include.NON_NULL )
+@JsonPropertyOrder( {"__type", "data", "fileName"} )
 public class CaseAttachmentDataResponse {
 
-    @JsonProperty(value = "__type")
+    @JsonProperty( value = "__type" )
     private String type;
-    @JsonProperty("data")
+    @JsonProperty( "data" )
     private byte[] data;
-    @JsonProperty("fileName")
+    @JsonProperty( "fileName" )
     private String fileName;
     @JsonIgnore
     private Map<String, Object> additionalProperties = new HashMap<String, Object>();
@@ -32,32 +32,32 @@ public class CaseAttachmentDataResponse {
         return response;
     }
 
-    @JsonProperty(value = "__type")
+    @JsonProperty( value = "__type" )
     public String getType() {
         return type;
     }
 
-    @JsonProperty(value = "__type")
+    @JsonProperty( value = "__type" )
     public void setType( String type ) {
         this.type = type;
     }
 
-    @JsonProperty("data")
+    @JsonProperty( "data" )
     public byte[] getData() {
         return data;
     }
 
-    @JsonProperty("data")
+    @JsonProperty( "data" )
     public void setData( byte[] data ) {
         this.data = data;
     }
 
-    @JsonProperty("fileName")
+    @JsonProperty( "fileName" )
     public String getFileName() {
         return fileName;
     }
 
-    @JsonProperty("fileName")
+    @JsonProperty( "fileName" )
     public void setFileName( String fileName ) {
         this.fileName = fileName;
     }

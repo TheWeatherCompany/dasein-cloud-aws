@@ -10,7 +10,7 @@ import org.dasein.cloud.platform.support.model.options.TicketCloseOptions;
  * @author Eugene Yaroslavtsev
  * @since 15.08.2014
  */
-@JsonInclude(Include.NON_NULL)
+@JsonInclude( Include.NON_NULL )
 public class CaseCloseOptions {
 
     @JsonIgnore
@@ -27,7 +27,7 @@ public class CaseCloseOptions {
         return new CaseCloseOptions(options);
     }
 
-    @JsonProperty(value = "caseId", required = true)
+    @JsonProperty( value = "caseId", required = true )
     public String getCaseId() {
         return _options.getTicketId();
     }
