@@ -2569,7 +2569,7 @@ public class EC2Instance extends AbstractVMSupport<AWSCloud> {
             AssociationIpAddress address = new AssociationIpAddress();
             if( primary != null ) address.setPrimary(primary);
             if( privateIp != null ) address.setPrivateIpAddress(new RawAddress(privateIp));
-            if( publicIp != null ) address.setPublicIp(new RawAddress(publicIp));
+            if( publicIp != null ) address.setPublicIpAddress(new RawAddress(publicIp));
             return address;
         }
         return null;
