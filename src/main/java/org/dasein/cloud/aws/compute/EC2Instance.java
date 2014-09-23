@@ -2276,6 +2276,7 @@ public class EC2Instance extends AbstractVMSupport<AWSCloud> {
             }
             else if( name.equals("networkInterfaceSet") ) {
                 ArrayList<String> networkInterfaceIds = new ArrayList<String>();
+                ArrayList<ProviderNetworkInterface> providerNetworkInterfaces = new ArrayList<ProviderNetworkInterface>();
                 if( attr.hasChildNodes() ) {
                     NodeList items = attr.getChildNodes();
                     for( int j = 0; j < items.getLength(); j++ ) {
@@ -2284,24 +2285,46 @@ public class EC2Instance extends AbstractVMSupport<AWSCloud> {
                         if( item.getNodeName().equals("item") && item.hasChildNodes() ) {
                             NodeList parts = item.getChildNodes();
                             String networkInterfaceId = null;
+                            ProviderNetworkInterface providerNetworkInterface = new ProviderNetworkInterface();
 
                             for( int k = 0; k < parts.getLength(); k++ ) {
                                 Node part = parts.item(k);
+                                String nodeName = part.getNodeName();
 
-                                if( part.getNodeName().equalsIgnoreCase("networkInterfaceId") ) {
+                                if( "networkInterfaceId".equalsIgnoreCase(nodeName) ) {
                                     if( part.hasChildNodes() ) {
                                         networkInterfaceId = part.getFirstChild().getNodeValue().trim();
+                                        providerNetworkInterface.setNetworkInterfaceId(networkInterfaceId);
+                                    }
+                                }
+                                else if( "privateIpAddressesSet".equalsIgnoreCase(nodeName) ) {
+                                    if( part.hasChildNodes() ) {
+                                        NodeList set = part.getChildNodes();
+                                        ArrayList<AssociationIpAddress> associationIpAddresses = new ArrayList<AssociationIpAddress>();
+
+                                        for( int h = 0; h < set.getLength(); h++ ) {
+                                            Node assoc = set.item(h);
+
+                                            if( assoc.getNodeName().equalsIgnoreCase("item") && assoc.hasChildNodes() ) {
+                                                AssociationIpAddress associationIpAddress = toPrivateIpAddressSet(assoc);
+                                                if( associationIpAddress != null )
+                                                    associationIpAddresses.add(associationIpAddress);
+                                            }
+                                        }
+                                        providerNetworkInterface.setAssociationIpAddresses(associationIpAddresses.toArray(new AssociationIpAddress[associationIpAddresses.size()]));
                                     }
                                 }
                             }
                             if( networkInterfaceId != null ) {
                                 networkInterfaceIds.add(networkInterfaceId);
+                                providerNetworkInterfaces.add(providerNetworkInterface);
                             }
                         }
                     }
                 }
                 if( networkInterfaceIds.size() > 0 ) {
                     server.setProviderNetworkInterfaceIds(networkInterfaceIds.toArray(new String[networkInterfaceIds.size()]));
+                    server.setProviderNetworkInterfaces(providerNetworkInterfaces.toArray(new ProviderNetworkInterface[providerNetworkInterfaces.size()]));
                 }
         /*
           [FIXME?] TODO: Really networkInterfaceSet needs to be own type/resource
@@ -2509,6 +2532,47 @@ public class EC2Instance extends AbstractVMSupport<AWSCloud> {
         }
 
         return server;
+    }
+
+    public AssociationIpAddress toPrivateIpAddressSet(Node part) {
+        NodeList privateIpAddresses = part.getChildNodes();
+
+        String privateIp = null;
+        String publicIp = null;
+        Boolean primary = null;
+
+        for( int h = 0; h < privateIpAddresses.getLength(); h++ ) {
+            Node privateIpAddress = privateIpAddresses.item(h);
+            String privateIpAddressNodeName = privateIpAddress.getNodeName();
+
+            if( "privateIpAddress".equalsIgnoreCase(privateIpAddressNodeName) ) {
+                privateIp = privateIpAddress.getFirstChild().getNodeValue().trim();
+            }
+            else if( "primary".equalsIgnoreCase(privateIpAddressNodeName) ) {
+                primary = Boolean.valueOf(privateIpAddress.getFirstChild().getNodeValue().trim());
+            }
+            else if( "association".equalsIgnoreCase(privateIpAddressNodeName) && privateIpAddress.hasChildNodes() ) {
+                NodeList assoc = privateIpAddress.getChildNodes();
+
+                for( int m = 0; m < assoc.getLength(); m++ ) {
+                    Node assocProp = assoc.item(m);
+                    String assocPropName = assocProp.getNodeName();
+
+                    if( "publicIp".equalsIgnoreCase(assocPropName) ) {
+                        publicIp = assocProp.getFirstChild().getNodeValue().trim();
+                    }
+                }
+            }
+        }
+
+        if( privateIp != null || publicIp != null || primary != null ) {
+            AssociationIpAddress address = new AssociationIpAddress();
+            if( primary != null ) address.setPrimary(primary);
+            if( privateIp != null ) address.setPrivateIpAddress(new RawAddress(privateIp));
+            if( publicIp != null ) address.setPublicIp(new RawAddress(publicIp));
+            return address;
+        }
+        return null;
     }
 
     @Override
