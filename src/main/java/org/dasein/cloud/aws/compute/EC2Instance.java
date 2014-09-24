@@ -2539,6 +2539,7 @@ public class EC2Instance extends AbstractVMSupport<AWSCloud> {
 
         String privateIp = null;
         String publicIp = null;
+        String publicDnsName = null;
         Boolean primary = null;
 
         for( int h = 0; h < privateIpAddresses.getLength(); h++ ) {
@@ -2550,6 +2551,9 @@ public class EC2Instance extends AbstractVMSupport<AWSCloud> {
             }
             else if( "primary".equalsIgnoreCase(privateIpAddressNodeName) ) {
                 primary = Boolean.valueOf(privateIpAddress.getFirstChild().getNodeValue().trim());
+            }
+            else if( "publicDnsName".equalsIgnoreCase(privateIpAddressNodeName)) {
+                publicDnsName = privateIpAddress.getFirstChild().getNodeValue().trim();
             }
             else if( "association".equalsIgnoreCase(privateIpAddressNodeName) && privateIpAddress.hasChildNodes() ) {
                 NodeList assoc = privateIpAddress.getChildNodes();
@@ -2565,9 +2569,10 @@ public class EC2Instance extends AbstractVMSupport<AWSCloud> {
             }
         }
 
-        if( privateIp != null || publicIp != null || primary != null ) {
+        if( privateIp != null || publicIp != null || primary != null || publicDnsName !=null ) {
             AssociationIpAddress address = new AssociationIpAddress();
-            if( primary != null ) address.setPrimary(primary);
+            address.setPrimary(primary);
+            address.setPublicDnsName(publicDnsName);
             if( privateIp != null ) address.setPrivateIpAddress(new RawAddress(privateIp));
             if( publicIp != null ) address.setPublicIpAddress(new RawAddress(publicIp));
             return address;
