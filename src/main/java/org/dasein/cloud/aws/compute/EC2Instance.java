@@ -1791,7 +1791,7 @@ public class EC2Instance extends AbstractVMSupport<AWSCloud> {
 
     @Override
     public @Nonnull Iterable<VirtualMachine> listVirtualMachines() throws InternalException, CloudException {
-        return listVirtualMachinesWithParams(null);
+        return listVirtualMachinesWithParams(null, null);
     }
 
     @Override
@@ -1805,7 +1805,7 @@ public class EC2Instance extends AbstractVMSupport<AWSCloud> {
             options = options.getSubnetId() != null ? options : null;
         }
 
-        return listVirtualMachinesWithParams(options);
+        return listVirtualMachinesWithParams(filterParameters, options);
     }
 
     private Future<Iterable<IpAddress>> getIPAddresses() throws InternalException, CloudException {
@@ -1897,7 +1897,6 @@ public class EC2Instance extends AbstractVMSupport<AWSCloud> {
                     Node instance = instances.item(j);
 
                     if( instance.getNodeName().equals("item") ) {
-                        Iterable<IpAddress> addresses;
                         try {
                             if( ipPoolFuture != null ) {
                                 addresses = ipPoolFuture.get(30, TimeUnit.SECONDS);
