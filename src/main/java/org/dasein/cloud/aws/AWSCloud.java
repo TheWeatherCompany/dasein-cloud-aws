@@ -1262,17 +1262,24 @@ public class AWSCloud extends AbstractCloud {
      * @throws CloudException
      */
     public static long getTimestampValue( Node node ) throws CloudException {
-        SimpleDateFormat fmt = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+        String[] patterns = {
+                "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'",
+                "yyyy-MM-dd'T'HH:mm:ss'Z'"
+        };
+        SimpleDateFormat fmt = new SimpleDateFormat();
         fmt.setTimeZone(TimeZone.getTimeZone("UTC"));
         String value = getTextValue(node);
 
-        try {
-            return fmt.parse(value).getTime();
-        } catch( ParseException e ) {
-            logger.error(e);
-            e.printStackTrace();
-            throw new CloudException(e);
+        for (String pattern : patterns) {
+            try {
+                fmt.applyPattern(pattern);
+                return fmt.parse(value).getTime();
+            } catch (ParseException e) {
+                //ignore me
+            }
         }
+        logger.error("Unparseable date " + value);
+        throw new CloudException("Unparseable date " + value);
     }
 
     /**
