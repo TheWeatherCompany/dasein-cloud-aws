@@ -238,15 +238,7 @@ public class CaseSupport extends AbstractTicketService {
             CaseSupportMethod method = new CaseSupportMethod(provider, CaseSupportTarget.ADD_ATTACHMENTS_TO_SET);
             try {
                 String attachmentSetResponse = method.invoke(new ObjectMapper().writeValueAsString(CaseCreateAttachmentsOptions.getInstance(options)));
-                String attachmentSetId = new ObjectMapper().readValue(attachmentSetResponse, CaseSetAttachmentResponse.class).getAttachmentSetId();
-
-                TicketCreateReplyOptions createOptions = new TicketCreateReplyOptions();
-                createOptions.setCaseId(options.getTicketId());
-                createOptions.setAttachmentSetId(attachmentSetId);
-                createOptions.setCommunicationBody("attachment file(s)");
-                createReply(createOptions);
-
-                return attachmentSetId;
+                return new ObjectMapper().readValue(attachmentSetResponse, CaseSetAttachmentResponse.class).getAttachmentSetId();
             } catch( IOException e ) {
                 logger.error(e);
                 throw new CloudException("Unable to process parameters" + e.getMessage());
