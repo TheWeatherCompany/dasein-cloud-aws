@@ -1523,18 +1523,22 @@ public class EC2Instance extends AbstractVMSupport<AWSCloud> {
                 if( a.existingVolumeId == null ) {
                     parameters.put("BlockDeviceMapping." + i + ".DeviceName", a.deviceId);
 
-                    VolumeProduct prd = getProvider().getComputeServices().getVolumeSupport().getVolumeProduct(a.volumeToCreate.getVolumeProductId());
-                    parameters.put("BlockDeviceMapping." + i + ".Ebs.VolumeType", prd.getProviderProductId());
+                    if (a.volumeToCreate.getVolumeProductId() != null && a.volumeToCreate.getVolumeProductId().equals(EphemeralVolume.VOLUME_PRODUCT_EPHEMERAL)) {
+                        int index = i - 1;
+                        parameters.put("BlockDeviceMapping." + i + ".VirtualName", EphemeralVolume.VOLUME_PRODUCT_EPHEMERAL + index);
+                    } else {
+                        VolumeProduct prd = getProvider().getComputeServices().getVolumeSupport().getVolumeProduct(a.volumeToCreate.getVolumeProductId());
+                        parameters.put("BlockDeviceMapping." + i + ".Ebs.VolumeType", prd.getProviderProductId());
 
-                    if( a.volumeToCreate.getIops() > 0 ) {
-                        parameters.put("BlockDeviceMapping." + i + ".Ebs.Iops", String.valueOf(a.volumeToCreate.getIops()));
-                    }
+                        if (a.volumeToCreate.getIops() > 0) {
+                            parameters.put("BlockDeviceMapping." + i + ".Ebs.Iops", String.valueOf(a.volumeToCreate.getIops()));
+                        }
 
-                    if( a.volumeToCreate.getSnapshotId() != null ) {
-                        parameters.put("BlockDeviceMapping." + i + ".Ebs.SnapshotId", a.volumeToCreate.getSnapshotId());
-                    }
-                    else {
-                        parameters.put("BlockDeviceMapping." + i + ".Ebs.VolumeSize", String.valueOf(a.volumeToCreate.getVolumeSize().getQuantity().intValue()));
+                        if (a.volumeToCreate.getSnapshotId() != null) {
+                            parameters.put("BlockDeviceMapping." + i + ".Ebs.SnapshotId", a.volumeToCreate.getSnapshotId());
+                        } else {
+                            parameters.put("BlockDeviceMapping." + i + ".Ebs.VolumeSize", String.valueOf(a.volumeToCreate.getVolumeSize().getQuantity().intValue()));
+                        }
                     }
                     i++;
                 }
