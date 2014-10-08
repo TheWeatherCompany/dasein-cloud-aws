@@ -259,29 +259,34 @@ public class AutoScaling extends AbstractAutoScalingSupport {
           int z = 1;
           for( VolumeAttachment va : options.getVolumeAttachment() ) {
             parameters.put("BlockDeviceMappings.member." + z + ".DeviceName", va.deviceId);
-            EBSVolume ebsv = new EBSVolume( provider );
-            String volType = null;
-            try {
-              VolumeProduct prd = ebsv.getVolumeProduct( va.volumeToCreate.getVolumeProductId() );
-              volType = prd.getProviderProductId();
-            } catch ( Exception e ) {
-              // toss it
-            }
-            if( volType == null ) {
-              if( options.getIOOptimized() && va.volumeToCreate.getIops() > 0 ) {
-                parameters.put("BlockDeviceMappings.member." + z + ".Ebs.VolumeType", "io1");
-              }
+            if (va.volumeToCreate.getVolumeProductId() != null && va.volumeToCreate.getVolumeProductId().equals(EphemeralVolume.VOLUME_PRODUCT_EPHEMERAL)) {
+              int index = z - 1;
+              parameters.put("BlockDeviceMapping." + z + ".VirtualName", EphemeralVolume.VOLUME_PRODUCT_EPHEMERAL + index);
             } else {
-              parameters.put("BlockDeviceMappings.member." + z + ".Ebs.VolumeType", volType);
-            }
-            if(va.volumeToCreate.getIops() > 0) {
-              parameters.put("BlockDeviceMappings.member." + z + ".Ebs.Iops", String.valueOf(va.volumeToCreate.getIops()));
-            }
-            if(va.volumeToCreate.getSnapshotId() != null) {
-              parameters.put("BlockDeviceMappings.member." + z + ".Ebs.SnapshotId", va.volumeToCreate.getSnapshotId());
-            }
-            if(va.volumeToCreate.getVolumeSize().getQuantity().intValue() > 0) {
-              parameters.put("BlockDeviceMappings.member." + z + ".Ebs.VolumeSize", String.valueOf(va.volumeToCreate.getVolumeSize().getQuantity().intValue()));
+              EBSVolume ebsv = new EBSVolume(provider);
+              String volType = null;
+              try {
+                VolumeProduct prd = ebsv.getVolumeProduct(va.volumeToCreate.getVolumeProductId());
+                volType = prd.getProviderProductId();
+              } catch (Exception e) {
+                // toss it
+              }
+              if (volType == null) {
+                if (options.getIOOptimized() && va.volumeToCreate.getIops() > 0) {
+                  parameters.put("BlockDeviceMappings.member." + z + ".Ebs.VolumeType", "io1");
+                }
+              } else {
+                parameters.put("BlockDeviceMappings.member." + z + ".Ebs.VolumeType", volType);
+              }
+              if (va.volumeToCreate.getIops() > 0) {
+                parameters.put("BlockDeviceMappings.member." + z + ".Ebs.Iops", String.valueOf(va.volumeToCreate.getIops()));
+              }
+              if (va.volumeToCreate.getSnapshotId() != null) {
+                parameters.put("BlockDeviceMappings.member." + z + ".Ebs.SnapshotId", va.volumeToCreate.getSnapshotId());
+              }
+              if (va.volumeToCreate.getVolumeSize().getQuantity().intValue() > 0) {
+                parameters.put("BlockDeviceMappings.member." + z + ".Ebs.VolumeSize", String.valueOf(va.volumeToCreate.getVolumeSize().getQuantity().intValue()));
+              }
             }
             z++;
           }
