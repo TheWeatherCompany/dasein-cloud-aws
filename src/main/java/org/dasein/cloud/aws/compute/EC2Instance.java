@@ -1523,9 +1523,9 @@ public class EC2Instance extends AbstractVMSupport<AWSCloud> {
                 if( a.existingVolumeId == null ) {
                     parameters.put("BlockDeviceMapping." + i + ".DeviceName", a.deviceId);
 
-                    if (a.volumeToCreate.getVolumeProductId() != null && a.volumeToCreate.getVolumeProductId().equalsIgnoreCase(EphemeralVolume.VOLUME_PRODUCT_EPHEMERAL)) {
+                    if (a.volumeToCreate.getVolumeProductId() != null && a.volumeToCreate.getVolumeProductId().equalsIgnoreCase(EBSVolume.VOLUME_PRODUCT_EPHEMERAL)) {
                         int index = i - 1;
-                        parameters.put("BlockDeviceMapping." + i + ".VirtualName", EphemeralVolume.VOLUME_PRODUCT_EPHEMERAL + index);
+                        parameters.put("BlockDeviceMapping." + i + ".VirtualName", EBSVolume.VOLUME_PRODUCT_EPHEMERAL + index);
                     } else {
                         VolumeProduct prd = getProvider().getComputeServices().getVolumeSupport().getVolumeProduct(a.volumeToCreate.getVolumeProductId());
                         parameters.put("BlockDeviceMapping." + i + ".Ebs.VolumeType", prd.getProviderProductId());

@@ -259,9 +259,9 @@ public class AutoScaling extends AbstractAutoScalingSupport {
           int z = 1;
           for( VolumeAttachment va : options.getVolumeAttachment() ) {
             parameters.put("BlockDeviceMappings.member." + z + ".DeviceName", va.deviceId);
-            if (va.volumeToCreate.getVolumeProductId() != null && va.volumeToCreate.getVolumeProductId().equalsIgnoreCase(EphemeralVolume.VOLUME_PRODUCT_EPHEMERAL)) {
+            if (va.volumeToCreate.getVolumeProductId() != null && va.volumeToCreate.getVolumeProductId().equalsIgnoreCase(EBSVolume.VOLUME_PRODUCT_EPHEMERAL)) {
               int index = z - 1;
-              parameters.put("BlockDeviceMappings.member." + z + ".VirtualName", EphemeralVolume.VOLUME_PRODUCT_EPHEMERAL + index);
+              parameters.put("BlockDeviceMappings.member." + z + ".VirtualName", EBSVolume.VOLUME_PRODUCT_EPHEMERAL + index);
             } else {
               EBSVolume ebsv = new EBSVolume(provider);
               String volType = null;
