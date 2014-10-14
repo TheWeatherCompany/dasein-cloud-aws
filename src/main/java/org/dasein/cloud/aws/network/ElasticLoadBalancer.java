@@ -1705,7 +1705,12 @@ public class ElasticLoadBalancer extends AbstractLoadBalancerSupport<AWSCloud> {
         }
         LoadBalancer lb = LoadBalancer.getInstance(getContext().getAccountNumber(), regionId, lbId, LoadBalancerState.ACTIVE, lbName, description, LoadBalancerAddressType.DNS, cname, ports).supportingTraffic(IPVersion.IPV4, IPVersion.IPV6).createdAt(created);
 
-        lb.setTags(listTags(lbId));
+        Iterable<Tag> tags = listTags(lbId);
+        Map<String, String> map = new HashMap<String, String>();
+        for( Tag tag : tags ) {
+            map.put(tag.getKey(), tag.getValue());
+        }
+        lb.setTags(map);
 
         if (!firewallIds.isEmpty()) {
             lb.setProviderFirewallIds(firewallIds.toArray(new String[firewallIds.size()]));
@@ -1736,7 +1741,7 @@ public class ElasticLoadBalancer extends AbstractLoadBalancerSupport<AWSCloud> {
     }
 
     @Override
-    public Map<String, String> listTags( String id ) throws CloudException, InternalException {
+    public Iterable<Tag> listTags( String id ) throws CloudException, InternalException {
         APITrace.begin(provider, "LB.listTags");
         try {
             Map<String, String> parameters = getELBParameters(getContext(), ELBMethod.DESCRIBE_TAGS);
@@ -1779,26 +1784,27 @@ public class ElasticLoadBalancer extends AbstractLoadBalancerSupport<AWSCloud> {
         }
     }
 
-    private Map<String, String> toTags( Node node ) {
+    private Iterable<Tag> toTags( Node node ) {
         if( node != null && node.getChildNodes() != null ) {
             NodeList tags = node.getChildNodes();
-            Map<String, String> map = new HashMap<String, String>();
+            Collection<Tag> result = new ArrayList<Tag>();
             for( int i = 0; i < tags.getLength(); i++ ) {
                 if( tags.item(i).getNodeName().equalsIgnoreCase("member") ) {
                     NodeList attr = tags.item(i).getChildNodes();
                     String value = null, key = null;
                     for( int j = 0; j < attr.getLength(); j++ ) {
                         String nameAttr = attr.item(j).getNodeName();
-                        if(nameAttr.equalsIgnoreCase("Value")) {
+                        if( nameAttr.equalsIgnoreCase("Value") ) {
                             value = attr.item(j).getFirstChild().getNodeValue();
-                        } else if(nameAttr.equalsIgnoreCase("Key")) {
+                        }
+                        else if( nameAttr.equalsIgnoreCase("Key") ) {
                             key = attr.item(j).getFirstChild().getNodeValue();
                         }
                     }
-                    if( key != null && value != null ) map.put(key, value);
+                    if( key != null && value != null ) result.add(new Tag(key, value));
                 }
             }
-            return map;
+            return result;
         }
         else {
             return null;
