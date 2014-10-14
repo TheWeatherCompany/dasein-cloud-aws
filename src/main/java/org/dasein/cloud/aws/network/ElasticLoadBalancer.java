@@ -1227,6 +1227,89 @@ public class ElasticLoadBalancer extends AbstractLoadBalancerSupport<AWSCloud> {
         }
     }
 
+    @Override public void updateTags( @Nonnull final String[] ids, boolean asynchronous, @Nonnull final Tag... tags ) throws CloudException, InternalException {
+        APITrace.begin(provider, "LB.updateTags");
+        try {
+            if( asynchronous ) {
+                provider.hold();
+
+                Thread t = new Thread() {
+                    public void run() {
+                        try {
+                            updateTags(ids, tags);
+                        } catch( CloudException e ) {
+                            logger.error(e.getMessage());
+                        } catch( InternalException e ) {
+                            logger.error(e.getMessage());
+                        } finally {
+                            provider.release();
+                        }
+                    }
+                };
+
+                t.setName("Tag updater");
+                t.setDaemon(true);
+                t.start();
+            }
+            else {
+                updateTags(ids, tags);
+            }
+        } finally {
+            APITrace.end();
+        }
+    }
+
+    @Override public void updateTags( @Nonnull String[] ids, @Nonnull Tag... tags ) throws CloudException, InternalException {
+        APITrace.begin(provider, "LB.updateTags");
+        try {
+            ELBMethod method;
+
+            Map<String, String> parameters = getELBParameters(getContext(), ELBMethod.ADD_TAGS);
+            for( int i = 0; i < ids.length; i++ ) {
+                parameters.put("LoadBalancerNames.member." + ( i + 1 ), ids[i]);
+            }
+            for( int i = 0; i < tags.length; i++ ) {
+                parameters.put("Tags.member." + ( i + 1 ) + ".Key", tags[i].getKey());
+                parameters.put("Tags.member." + ( i + 1 ) + ".Value", tags[i].getValue());
+            }
+            method = new ELBMethod(provider, getContext(), parameters);
+
+            try {
+                method.invoke();
+            } catch( EC2Exception e ) {
+                logger.error(e.getSummary());
+                throw new CloudException(e);
+            }
+        } finally {
+            APITrace.end();
+        }
+    }
+
+    @Override public void removeTags( @Nonnull String[] ids, @Nonnull Tag... tags ) throws CloudException, InternalException {
+        APITrace.begin(provider, "LB.removeTags");
+        try {
+            ELBMethod method;
+
+            Map<String, String> parameters = getELBParameters(getContext(), ELBMethod.REMOVE_TAGS);
+            for( int i = 0; i < ids.length; i++ ) {
+                parameters.put("LoadBalancerNames.member." + ( i + 1 ), ids[i]);
+            }
+            for( int i = 0; i < tags.length; i++ ) {
+                parameters.put("Tags.member." + ( i + 1 ) + ".Key", tags[i].getKey());
+            }
+            method = new ELBMethod(provider, getContext(), parameters);
+
+            try {
+                method.invoke();
+            } catch( EC2Exception e ) {
+                logger.error(e.getSummary());
+                throw new CloudException(e);
+            }
+        } finally {
+            APITrace.end();
+        }
+    }
+
     @Override
     public Iterable<LoadBalancerHealthCheck> listLBHealthChecks( @Nullable HealthCheckFilterOptions opts ) throws CloudException, InternalException {
         APITrace.begin(provider, "LB.listLBHealthChecks");
@@ -1622,6 +1705,8 @@ public class ElasticLoadBalancer extends AbstractLoadBalancerSupport<AWSCloud> {
         }
         LoadBalancer lb = LoadBalancer.getInstance(getContext().getAccountNumber(), regionId, lbId, LoadBalancerState.ACTIVE, lbName, description, LoadBalancerAddressType.DNS, cname, ports).supportingTraffic(IPVersion.IPV4, IPVersion.IPV6).createdAt(created);
 
+        lb.setTags(listTags(lbId));
+
         if (!firewallIds.isEmpty()) {
             lb.setProviderFirewallIds(firewallIds.toArray(new String[firewallIds.size()]));
         }
@@ -1648,6 +1733,76 @@ public class ElasticLoadBalancer extends AbstractLoadBalancerSupport<AWSCloud> {
             lb.setHealthCheck(lbhc);
         }
         return lb;
+    }
+
+    @Override
+    public Map<String, String> listTags( String id ) throws CloudException, InternalException {
+        APITrace.begin(provider, "LB.listTags");
+        try {
+            Map<String, String> parameters = getELBParameters(getContext(), ELBMethod.DESCRIBE_TAGS);
+            ELBMethod method;
+            NodeList blocks;
+            Document doc;
+
+            parameters.put("LoadBalancerNames.member.1", id);
+            method = new ELBMethod(provider, getContext(), parameters);
+            try {
+                doc = method.invoke();
+            } catch( EC2Exception e ) {
+                String code = e.getCode();
+                if( code != null && code.equals("TagDescriptions") ) {
+                    return null;
+                }
+                logger.error(e.getSummary());
+                throw new CloudException(e);
+            }
+            blocks = doc.getElementsByTagName("TagDescriptions");
+            if( blocks.getLength() > 0 ) {
+                Node result = blocks.item(0);
+                NodeList childNodes = result.getChildNodes();
+
+                for( int i = 0; i < childNodes.getLength(); i++ ) {
+                    if( childNodes.item(i).getNodeName().equalsIgnoreCase("member") ) {
+                        NodeList tags = childNodes.item(i).getChildNodes();
+
+                        for( int j = 0; j < tags.getLength(); j++ ) {
+                            if( tags.item(j).getNodeName().equalsIgnoreCase("Tags") ) {
+                                return toTags(tags.item(j));
+                            }
+                        }
+                    }
+                }
+            }
+            return null;
+        } finally {
+            APITrace.end();
+        }
+    }
+
+    private Map<String, String> toTags( Node node ) {
+        if( node != null && node.getChildNodes() != null ) {
+            NodeList tags = node.getChildNodes();
+            Map<String, String> map = new HashMap<String, String>();
+            for( int i = 0; i < tags.getLength(); i++ ) {
+                if( tags.item(i).getNodeName().equalsIgnoreCase("member") ) {
+                    NodeList attr = tags.item(i).getChildNodes();
+                    String value = null, key = null;
+                    for( int j = 0; j < attr.getLength(); j++ ) {
+                        String nameAttr = attr.item(j).getNodeName();
+                        if(nameAttr.equalsIgnoreCase("Value")) {
+                            value = attr.item(j).getFirstChild().getNodeValue();
+                        } else if(nameAttr.equalsIgnoreCase("Key")) {
+                            key = attr.item(j).getFirstChild().getNodeValue();
+                        }
+                    }
+                    if( key != null && value != null ) map.put(key, value);
+                }
+            }
+            return map;
+        }
+        else {
+            return null;
+        }
     }
 
     private LbProtocol toProtocol(String txt) {
