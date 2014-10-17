@@ -1227,38 +1227,6 @@ public class ElasticLoadBalancer extends AbstractLoadBalancerSupport<AWSCloud> {
         }
     }
 
-    @Override public void updateTags( @Nonnull final String[] ids, boolean asynchronous, @Nonnull final Tag... tags ) throws CloudException, InternalException {
-        APITrace.begin(provider, "LB.updateTags");
-        try {
-            if( asynchronous ) {
-                provider.hold();
-
-                Thread t = new Thread() {
-                    public void run() {
-                        try {
-                            updateTags(ids, tags);
-                        } catch( CloudException e ) {
-                            logger.error(e.getMessage());
-                        } catch( InternalException e ) {
-                            logger.error(e.getMessage());
-                        } finally {
-                            provider.release();
-                        }
-                    }
-                };
-
-                t.setName("Tag updater");
-                t.setDaemon(true);
-                t.start();
-            }
-            else {
-                updateTags(ids, tags);
-            }
-        } finally {
-            APITrace.end();
-        }
-    }
-
     @Override public void updateTags( @Nonnull String[] ids, @Nonnull Tag... tags ) throws CloudException, InternalException {
         APITrace.begin(provider, "LB.updateTags");
         try {
