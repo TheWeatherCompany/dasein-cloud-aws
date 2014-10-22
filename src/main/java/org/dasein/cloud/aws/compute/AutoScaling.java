@@ -19,6 +19,7 @@
 
 package org.dasein.cloud.aws.compute;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.dasein.cloud.*;
 import org.dasein.cloud.aws.AWSCloud;
@@ -395,7 +396,11 @@ public class AutoScaling extends AbstractAutoScalingSupport {
         }
     }
 
-    private Map<String,String> getAutoScalingParameters(ProviderContext ctx, String action) throws InternalException {
+	private Map<String,String> getAutoScalingParameters(ProviderContext ctx, String action) throws InternalException {
+		return getAutoScalingParameters(ctx, action, null);
+	}
+
+    private Map<String,String> getAutoScalingParameters(ProviderContext ctx, String action, @Nullable String nextToken) throws InternalException {
         APITrace.begin(provider, "AutoScaling.getAutoScalingParameters");
         try {
             HashMap<String,String> parameters = new HashMap<String,String>();
@@ -413,7 +418,10 @@ public class AutoScaling extends AbstractAutoScalingSupport {
             parameters.put(AWSCloud.P_SIGNATURE_METHOD, AWSCloud.EC2_ALGORITHM);
             parameters.put(AWSCloud.P_TIMESTAMP, provider.getTimestamp(System.currentTimeMillis(), true));
             parameters.put(AWSCloud.P_VERSION, provider.getAutoScaleVersion());
-            return parameters;
+	        if (StringUtils.isNotEmpty(nextToken)) {
+		        parameters.put(AWSCloud.P_NEXT_TOKEN, nextToken);
+	        }
+	        return parameters;
         }
         finally {
             APITrace.end();
@@ -750,16 +758,16 @@ public class AutoScaling extends AbstractAutoScalingSupport {
     }
 
     @Override
-    public @Nonnull Iterable<ResourceStatus> listLaunchConfigurationStatus() throws CloudException, InternalException {
+    public @Nonnull Iterable<ResourceStatus> listLaunchConfigurationStatus(String nextToken) throws CloudException, InternalException {
         APITrace.begin(provider, "AutoScaling.listLaunchConfigurationStatus");
         try {
-            Map<String,String> parameters = getAutoScalingParameters(provider.getContext(), EC2Method.DESCRIBE_LAUNCH_CONFIGURATIONS);
+            Map<String,String> parameters = getAutoScalingParameters(provider.getContext(), EC2Method.DESCRIBE_LAUNCH_CONFIGURATIONS, nextToken);
             ArrayList<ResourceStatus> list = new ArrayList<ResourceStatus>();
             EC2Method method;
             NodeList blocks;
             Document doc;
 
-            method = new EC2Method(provider, getAutoScalingUrl(), parameters);
+	        method = new EC2Method(provider, getAutoScalingUrl(), parameters);
             try {
                 doc = method.invoke();
             }
@@ -783,6 +791,17 @@ public class AutoScaling extends AbstractAutoScalingSupport {
                     }
                 }
             }
+
+	        NodeList moreLaunchConfigurations = doc.getElementsByTagName(AWSCloud.P_NEXT_TOKEN);
+	        if (moreLaunchConfigurations != null && moreLaunchConfigurations.getLength() == 1) {
+		        if (moreLaunchConfigurations.item(0) != null && moreLaunchConfigurations.item(0).getFirstChild() != null) {
+			        String nextBatch = moreLaunchConfigurations.item(0).getFirstChild().getNodeValue();
+			        for (ResourceStatus resourceStatus : this.listLaunchConfigurationStatus(nextBatch)) {
+				        list.add(resourceStatus);
+			        }
+		        }
+	        }
+
             return list;
         }
         finally {
@@ -791,10 +810,10 @@ public class AutoScaling extends AbstractAutoScalingSupport {
     }
 
     @Override
-    public Collection<LaunchConfiguration> listLaunchConfigurations() throws CloudException, InternalException {
+    public Collection<LaunchConfiguration> listLaunchConfigurations(String nextToken) throws CloudException, InternalException {
         APITrace.begin(provider, "AutoScaling.listLaunchConfigurations");
         try {
-            Map<String,String> parameters = getAutoScalingParameters(provider.getContext(), EC2Method.DESCRIBE_LAUNCH_CONFIGURATIONS);
+            Map<String,String> parameters = getAutoScalingParameters(provider.getContext(), EC2Method.DESCRIBE_LAUNCH_CONFIGURATIONS, nextToken);
             ArrayList<LaunchConfiguration> list = new ArrayList<LaunchConfiguration>();
             EC2Method method;
             NodeList blocks;
@@ -824,6 +843,15 @@ public class AutoScaling extends AbstractAutoScalingSupport {
                     }
                 }
             }
+
+	        NodeList moreLaunchConfigurations = doc.getElementsByTagName(AWSCloud.P_NEXT_TOKEN);
+	        if (moreLaunchConfigurations != null && moreLaunchConfigurations.getLength() == 1) {
+		        if (moreLaunchConfigurations.item(0) != null && moreLaunchConfigurations.item(0).getFirstChild() != null) {
+			        String nextBatch = moreLaunchConfigurations.item(0).getFirstChild().getNodeValue();
+			        list.addAll(this.listLaunchConfigurations(nextBatch));
+		        }
+	        }
+
             return list;
         }
         finally {
@@ -832,7 +860,7 @@ public class AutoScaling extends AbstractAutoScalingSupport {
     }
 
     @Override
-    public Iterable<ResourceStatus> listScalingGroupStatus() throws CloudException, InternalException {
+    public Iterable<ResourceStatus> listScalingGroupStatus(String nextToken) throws CloudException, InternalException {
         APITrace.begin(provider, "AutoScaling.listScalingGroupStatus");
         try {
             ProviderContext ctx = provider.getContext();
@@ -842,7 +870,7 @@ public class AutoScaling extends AbstractAutoScalingSupport {
             }
             ArrayList<ResourceStatus> list = new ArrayList<ResourceStatus>();
 
-            Map<String,String> parameters = getAutoScalingParameters(provider.getContext(), EC2Method.DESCRIBE_AUTO_SCALING_GROUPS);
+            Map<String,String> parameters = getAutoScalingParameters(provider.getContext(), EC2Method.DESCRIBE_AUTO_SCALING_GROUPS, nextToken);
             EC2Method method;
             NodeList blocks;
             Document doc;
@@ -871,7 +899,18 @@ public class AutoScaling extends AbstractAutoScalingSupport {
                     }
                 }
             }
-            return list;
+
+	        NodeList moreLaunchConfigurations = doc.getElementsByTagName(AWSCloud.P_NEXT_TOKEN);
+	        if (moreLaunchConfigurations != null && moreLaunchConfigurations.getLength() == 1) {
+		        if (moreLaunchConfigurations.item(0) != null && moreLaunchConfigurations.item(0).getFirstChild() != null) {
+			        String nextBatch = moreLaunchConfigurations.item(0).getFirstChild().getNodeValue();
+			        for (ResourceStatus resourceStatus : this.listScalingGroupStatus(nextBatch)) {
+				        list.add(resourceStatus);
+			        }
+		        }
+	        }
+
+	        return list;
         }
         finally {
             APITrace.end();
@@ -883,7 +922,15 @@ public class AutoScaling extends AbstractAutoScalingSupport {
 	 */
 	@Override
 	public Collection<ScalingGroup> listScalingGroups() throws CloudException, InternalException {
-		return listScalingGroups(AutoScalingGroupFilterOptions.getInstance());
+		return listScalingGroups(AutoScalingGroupFilterOptions.getInstance(), null);
+	}
+
+	/**
+	 * Provides backwards compatibility
+	 */
+	@Override
+	public Collection<ScalingGroup> listScalingGroups(AutoScalingGroupFilterOptions options) throws CloudException, InternalException {
+		return listScalingGroups(options, null);
 	}
 
 	/**
@@ -893,7 +940,7 @@ public class AutoScaling extends AbstractAutoScalingSupport {
 	 * @return filtered list of scaling groups
 	 */
 	@Override
-    public Collection<ScalingGroup> listScalingGroups(AutoScalingGroupFilterOptions options) throws CloudException, InternalException {
+    public Collection<ScalingGroup> listScalingGroups(AutoScalingGroupFilterOptions options, String nextToken) throws CloudException, InternalException {
         APITrace.begin(provider, "AutoScaling.listScalingGroups");
         try {
             ProviderContext ctx = provider.getContext();
@@ -903,7 +950,7 @@ public class AutoScaling extends AbstractAutoScalingSupport {
             }
             ArrayList<ScalingGroup> list = new ArrayList<ScalingGroup>();
 
-            Map<String,String> parameters = getAutoScalingParameters(provider.getContext(), EC2Method.DESCRIBE_AUTO_SCALING_GROUPS);
+            Map<String,String> parameters = getAutoScalingParameters(provider.getContext(), EC2Method.DESCRIBE_AUTO_SCALING_GROUPS, nextToken);
             EC2Method method;
             NodeList blocks;
             Document doc;
@@ -933,7 +980,16 @@ public class AutoScaling extends AbstractAutoScalingSupport {
                     }
                 }
             }
-            return list;
+
+	        NodeList moreLaunchConfigurations = doc.getElementsByTagName(AWSCloud.P_NEXT_TOKEN);
+	        if (moreLaunchConfigurations != null && moreLaunchConfigurations.getLength() == 1) {
+		        if (moreLaunchConfigurations.item(0) != null && moreLaunchConfigurations.item(0).getFirstChild() != null) {
+			        String nextBatch = moreLaunchConfigurations.item(0).getFirstChild().getNodeValue();
+			        list.addAll(this.listScalingGroups(options, nextBatch));
+		        }
+	        }
+
+	        return list;
         }
         finally {
             APITrace.end();

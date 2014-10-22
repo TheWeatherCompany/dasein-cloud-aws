@@ -110,6 +110,7 @@ public class AWSCloud extends AbstractCloud {
     static public final String P_SIGNATURE_VERSION = "SignatureVersion";
     static public final String P_TIMESTAMP = "Timestamp";
     static public final String P_VERSION = "Version";
+    static public final String P_NEXT_TOKEN = "NextToken";
 
     static public final String CLOUD_FRONT_ALGORITHM = "HmacSHA1";
     static public final String EC2_ALGORITHM = "HmacSHA256";
