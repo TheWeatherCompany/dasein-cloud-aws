@@ -19,7 +19,6 @@
 
 package org.dasein.cloud.aws.compute;
 
-import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.dasein.cloud.*;
 import org.dasein.cloud.aws.AWSCloud;
@@ -396,11 +395,7 @@ public class AutoScaling extends AbstractAutoScalingSupport {
         }
     }
 
-	private Map<String,String> getAutoScalingParameters(ProviderContext ctx, String action) throws InternalException {
-		return getAutoScalingParameters(ctx, action, null);
-	}
-
-    private Map<String,String> getAutoScalingParameters(ProviderContext ctx, String action, @Nullable String nextToken) throws InternalException {
+    private Map<String,String> getAutoScalingParameters(ProviderContext ctx, String action) throws InternalException {
         APITrace.begin(provider, "AutoScaling.getAutoScalingParameters");
         try {
             HashMap<String,String> parameters = new HashMap<String,String>();
@@ -418,9 +413,6 @@ public class AutoScaling extends AbstractAutoScalingSupport {
             parameters.put(AWSCloud.P_SIGNATURE_METHOD, AWSCloud.EC2_ALGORITHM);
             parameters.put(AWSCloud.P_TIMESTAMP, provider.getTimestamp(System.currentTimeMillis(), true));
             parameters.put(AWSCloud.P_VERSION, provider.getAutoScaleVersion());
-	        if (StringUtils.isNotEmpty(nextToken)) {
-		        parameters.put(AWSCloud.P_NEXT_TOKEN, nextToken);
-	        }
 	        return parameters;
         }
         finally {
@@ -758,179 +750,200 @@ public class AutoScaling extends AbstractAutoScalingSupport {
     }
 
     @Override
-    public @Nonnull Iterable<ResourceStatus> listLaunchConfigurationStatus(String nextToken) throws CloudException, InternalException {
-        APITrace.begin(provider, "AutoScaling.listLaunchConfigurationStatus");
-        try {
-            Map<String,String> parameters = getAutoScalingParameters(provider.getContext(), EC2Method.DESCRIBE_LAUNCH_CONFIGURATIONS, nextToken);
-            ArrayList<ResourceStatus> list = new ArrayList<ResourceStatus>();
-            EC2Method method;
-            NodeList blocks;
-            Document doc;
+    public @Nonnull Iterable<ResourceStatus> listLaunchConfigurationStatus( ) throws CloudException, InternalException {
+	    PopulatorThread<ResourceStatus> populator;
 
-	        method = new EC2Method(provider, getAutoScalingUrl(), parameters);
-            try {
-                doc = method.invoke();
-            }
-            catch( EC2Exception e ) {
-                logger.error(e.getSummary());
-                throw new CloudException(e);
-            }
-            blocks = doc.getElementsByTagName("LaunchConfigurations");
-            for( int i=0; i<blocks.getLength(); i++ ) {
-                NodeList items = blocks.item(i).getChildNodes();
-
-                for( int j=0; j<items.getLength(); j++ ) {
-                    Node item = items.item(j);
-
-                    if( item.getNodeName().equals("member") ) {
-                        ResourceStatus status = toLCStatus(item);
-
-                        if( status != null ) {
-                            list.add(status);
-                        }
-                    }
-                }
-            }
-
-	        NodeList moreLaunchConfigurations = doc.getElementsByTagName(AWSCloud.P_NEXT_TOKEN);
-	        if (moreLaunchConfigurations != null && moreLaunchConfigurations.getLength() == 1) {
-		        if (moreLaunchConfigurations.item(0) != null && moreLaunchConfigurations.item(0).getFirstChild() != null) {
-			        String nextBatch = moreLaunchConfigurations.item(0).getFirstChild().getNodeValue();
-			        for (ResourceStatus resourceStatus : this.listLaunchConfigurationStatus(nextBatch)) {
-				        list.add(resourceStatus);
-			        }
-		        }
-	        }
-
-            return list;
-        }
-        finally {
-            APITrace.end();
-        }
+	    provider.hold();
+	    populator = new PopulatorThread<ResourceStatus>(new JiteratorPopulator<ResourceStatus>() {
+		    public void populate( @Nonnull Jiterator<ResourceStatus> iterator ) throws CloudException, InternalException {
+			    try {
+				    populateLaunchConfigurationStatus(iterator, null);
+			    } finally {
+				    provider.release();
+			    }
+		    }
+	    });
+	    populator.populate();
+	    return populator.getResult();
     }
+
+	private void populateLaunchConfigurationStatus( @Nonnull Jiterator<ResourceStatus> iterator, @Nullable String nextToken ) throws CloudException, InternalException {
+		APITrace.begin(provider, "AutoScaling.listLaunchConfigurationStatus");
+		try {
+			Map<String,String> parameters = getAutoScalingParameters(provider.getContext(), EC2Method.DESCRIBE_LAUNCH_CONFIGURATIONS);
+			EC2Method method;
+			NodeList blocks;
+			Document doc;
+
+			AWSCloud.addValueIfNotNull(parameters, AWSCloud.P_NEXT_TOKEN, nextToken);
+
+			method = new EC2Method(provider, getAutoScalingUrl(), parameters);
+			try {
+				doc = method.invoke();
+			}
+			catch( EC2Exception e ) {
+				logger.error(e.getSummary());
+				throw new CloudException(e);
+			}
+			blocks = doc.getElementsByTagName("LaunchConfigurations");
+			for( int i=0; i<blocks.getLength(); i++ ) {
+				NodeList items = blocks.item(i).getChildNodes();
+
+				for( int j=0; j<items.getLength(); j++ ) {
+					Node item = items.item(j);
+
+					if( item.getNodeName().equals("member") ) {
+						ResourceStatus status = toLCStatus(item);
+
+						if( status != null ) {
+							iterator.push(status);
+						}
+					}
+				}
+			}
+
+            blocks = doc.getElementsByTagName(AWSCloud.P_NEXT_TOKEN);
+			if( blocks != null && blocks.getLength() == 1 && blocks.item(0).hasChildNodes() ) {
+				String newNextToken = provider.getTextValue(blocks.item(0));
+				populateLaunchConfigurationStatus(iterator, newNextToken);
+			}
+
+		}
+		finally {
+			APITrace.end();
+		}
+	}
 
     @Override
-    public Collection<LaunchConfiguration> listLaunchConfigurations(String nextToken) throws CloudException, InternalException {
-        APITrace.begin(provider, "AutoScaling.listLaunchConfigurations");
-        try {
-            Map<String,String> parameters = getAutoScalingParameters(provider.getContext(), EC2Method.DESCRIBE_LAUNCH_CONFIGURATIONS, nextToken);
-            ArrayList<LaunchConfiguration> list = new ArrayList<LaunchConfiguration>();
-            EC2Method method;
-            NodeList blocks;
-            Document doc;
+    public Collection<LaunchConfiguration> listLaunchConfigurations( ) throws CloudException, InternalException {
+	    PopulatorThread<LaunchConfiguration> populator;
 
-            method = new EC2Method(provider, getAutoScalingUrl(), parameters);
-            try {
-                doc = method.invoke();
-            }
-            catch( EC2Exception e ) {
-                logger.error(e.getSummary());
-                throw new CloudException(e);
-            }
-            blocks = doc.getElementsByTagName("LaunchConfigurations");
-            for( int i=0; i<blocks.getLength(); i++ ) {
-                NodeList items = blocks.item(i).getChildNodes();
-
-                for( int j=0; j<items.getLength(); j++ ) {
-                    Node item = items.item(j);
-
-                    if( item.getNodeName().equals("member") ) {
-                        LaunchConfiguration cfg = toLaunchConfiguration(item);
-
-                        if( cfg != null ) {
-                            list.add(cfg);
-                        }
-                    }
-                }
-            }
-
-	        NodeList moreLaunchConfigurations = doc.getElementsByTagName(AWSCloud.P_NEXT_TOKEN);
-	        if (moreLaunchConfigurations != null && moreLaunchConfigurations.getLength() == 1) {
-		        if (moreLaunchConfigurations.item(0) != null && moreLaunchConfigurations.item(0).getFirstChild() != null) {
-			        String nextBatch = moreLaunchConfigurations.item(0).getFirstChild().getNodeValue();
-			        list.addAll(this.listLaunchConfigurations(nextBatch));
-		        }
-	        }
-
-            return list;
-        }
-        finally {
-            APITrace.end();
-        }
+	    provider.hold();
+	    populator = new PopulatorThread<LaunchConfiguration>(new JiteratorPopulator<LaunchConfiguration>() {
+		    public void populate( @Nonnull Jiterator<LaunchConfiguration> iterator ) throws CloudException, InternalException {
+			    try {
+				    populateLaunchConfiguration(iterator, null);
+			    } finally {
+				    provider.release();
+			    }
+		    }
+	    });
+	    populator.populate();
+	    return populator.getResult();
     }
+
+	private void populateLaunchConfiguration( @Nonnull Jiterator<LaunchConfiguration> iterator, @Nullable String nextToken ) throws CloudException, InternalException {
+		APITrace.begin(provider, "AutoScaling.listLaunchConfigurations");
+		try {
+			Map<String,String> parameters = getAutoScalingParameters(provider.getContext(), EC2Method.DESCRIBE_LAUNCH_CONFIGURATIONS);
+			EC2Method method;
+			NodeList blocks;
+			Document doc;
+
+			AWSCloud.addValueIfNotNull(parameters, AWSCloud.P_NEXT_TOKEN, nextToken);
+
+			method = new EC2Method(provider, getAutoScalingUrl(), parameters);
+			try {
+				doc = method.invoke();
+			}
+			catch( EC2Exception e ) {
+				logger.error(e.getSummary());
+				throw new CloudException(e);
+			}
+			blocks = doc.getElementsByTagName("LaunchConfigurations");
+			for( int i=0; i<blocks.getLength(); i++ ) {
+				NodeList items = blocks.item(i).getChildNodes();
+
+				for( int j=0; j<items.getLength(); j++ ) {
+					Node item = items.item(j);
+
+					if( item.getNodeName().equals("member") ) {
+						LaunchConfiguration cfg = toLaunchConfiguration(item);
+
+						if( cfg != null ) {
+							iterator.push(cfg);
+						}
+					}
+				}
+			}
+
+		}
+		finally {
+			APITrace.end();
+		}
+	}
 
     @Override
-    public Iterable<ResourceStatus> listScalingGroupStatus(String nextToken) throws CloudException, InternalException {
-        APITrace.begin(provider, "AutoScaling.listScalingGroupStatus");
-        try {
-            ProviderContext ctx = provider.getContext();
+    public Iterable<ResourceStatus> listScalingGroupStatus( ) throws CloudException, InternalException {
+	    PopulatorThread<ResourceStatus> populator;
 
-            if( ctx == null ) {
-                throw new CloudException("No context has been set for this request");
-            }
-            ArrayList<ResourceStatus> list = new ArrayList<ResourceStatus>();
-
-            Map<String,String> parameters = getAutoScalingParameters(provider.getContext(), EC2Method.DESCRIBE_AUTO_SCALING_GROUPS, nextToken);
-            EC2Method method;
-            NodeList blocks;
-            Document doc;
-
-            method = new EC2Method(provider, getAutoScalingUrl(), parameters);
-            try {
-                doc = method.invoke();
-            }
-            catch( EC2Exception e ) {
-                logger.error(e.getSummary());
-                throw new CloudException(e);
-            }
-            blocks = doc.getElementsByTagName("AutoScalingGroups");
-            for( int i=0; i<blocks.getLength(); i++ ) {
-                NodeList items = blocks.item(i).getChildNodes();
-
-                for( int j=0; j<items.getLength(); j++ ) {
-                    Node item = items.item(j);
-
-                    if( item.getNodeName().equals("member") ) {
-                        ResourceStatus status = toGroupStatus(item);
-
-                        if( status != null ) {
-                            list.add(status);
-                        }
-                    }
-                }
-            }
-
-	        NodeList moreLaunchConfigurations = doc.getElementsByTagName(AWSCloud.P_NEXT_TOKEN);
-	        if (moreLaunchConfigurations != null && moreLaunchConfigurations.getLength() == 1) {
-		        if (moreLaunchConfigurations.item(0) != null && moreLaunchConfigurations.item(0).getFirstChild() != null) {
-			        String nextBatch = moreLaunchConfigurations.item(0).getFirstChild().getNodeValue();
-			        for (ResourceStatus resourceStatus : this.listScalingGroupStatus(nextBatch)) {
-				        list.add(resourceStatus);
-			        }
-		        }
-	        }
-
-	        return list;
-        }
-        finally {
-            APITrace.end();
-        }
+	    provider.hold();
+	    populator = new PopulatorThread<ResourceStatus>(new JiteratorPopulator<ResourceStatus>() {
+		    public void populate( @Nonnull Jiterator<ResourceStatus> iterator ) throws CloudException, InternalException {
+			    try {
+				    populateScalingGroupStatus(iterator, null);
+			    } finally {
+				    provider.release();
+			    }
+		    }
+	    });
+	    populator.populate();
+	    return populator.getResult();
     }
 
-	/**
-	 * Provides backwards compatibility
-	 */
-	@Override
-	public Collection<ScalingGroup> listScalingGroups() throws CloudException, InternalException {
-		return listScalingGroups(AutoScalingGroupFilterOptions.getInstance(), null);
+	private void populateScalingGroupStatus( @Nonnull Jiterator<ResourceStatus> iterator, @Nullable String nextToken ) throws CloudException, InternalException {
+		APITrace.begin(provider, "AutoScaling.listScalingGroupStatus");
+		try {
+			ProviderContext ctx = provider.getContext();
+
+			if( ctx == null ) {
+				throw new CloudException("No context has been set for this request");
+			}
+
+			Map<String,String> parameters = getAutoScalingParameters(provider.getContext(), EC2Method.DESCRIBE_AUTO_SCALING_GROUPS);
+			EC2Method method;
+			NodeList blocks;
+			Document doc;
+
+			AWSCloud.addValueIfNotNull(parameters, AWSCloud.P_NEXT_TOKEN, nextToken);
+
+			method = new EC2Method(provider, getAutoScalingUrl(), parameters);
+			try {
+				doc = method.invoke();
+			}
+			catch( EC2Exception e ) {
+				logger.error(e.getSummary());
+				throw new CloudException(e);
+			}
+			blocks = doc.getElementsByTagName("AutoScalingGroups");
+			for( int i=0; i<blocks.getLength(); i++ ) {
+				NodeList items = blocks.item(i).getChildNodes();
+
+				for( int j=0; j<items.getLength(); j++ ) {
+					Node item = items.item(j);
+
+					if( item.getNodeName().equals("member") ) {
+						ResourceStatus status = toGroupStatus(item);
+
+						if( status != null ) {
+							iterator.push(status);
+						}
+					}
+				}
+			}
+
+		}
+		finally {
+			APITrace.end();
+		}
 	}
 
 	/**
 	 * Provides backwards compatibility
 	 */
 	@Override
-	public Collection<ScalingGroup> listScalingGroups(AutoScalingGroupFilterOptions options) throws CloudException, InternalException {
-		return listScalingGroups(options, null);
+	public Collection<ScalingGroup> listScalingGroups() throws CloudException, InternalException {
+		return listScalingGroups(AutoScalingGroupFilterOptions.getInstance());
 	}
 
 	/**
@@ -940,61 +953,70 @@ public class AutoScaling extends AbstractAutoScalingSupport {
 	 * @return filtered list of scaling groups
 	 */
 	@Override
-    public Collection<ScalingGroup> listScalingGroups(AutoScalingGroupFilterOptions options, String nextToken) throws CloudException, InternalException {
-        APITrace.begin(provider, "AutoScaling.listScalingGroups");
-        try {
-            ProviderContext ctx = provider.getContext();
+    public Collection<ScalingGroup> listScalingGroups( final AutoScalingGroupFilterOptions options) throws CloudException, InternalException {
+		PopulatorThread<ScalingGroup> populator;
 
-            if( ctx == null ) {
-                throw new CloudException("No context has been set for this request");
-            }
-            ArrayList<ScalingGroup> list = new ArrayList<ScalingGroup>();
-
-            Map<String,String> parameters = getAutoScalingParameters(provider.getContext(), EC2Method.DESCRIBE_AUTO_SCALING_GROUPS, nextToken);
-            EC2Method method;
-            NodeList blocks;
-            Document doc;
-
-            method = new EC2Method(provider, getAutoScalingUrl(), parameters);
-            try {
-                doc = method.invoke();
-            }
-            catch( EC2Exception e ) {
-                logger.error(e.getSummary());
-                throw new CloudException(e);
-            }
-            blocks = doc.getElementsByTagName("AutoScalingGroups");
-            for( int i=0; i<blocks.getLength(); i++ ) {
-                NodeList items = blocks.item(i).getChildNodes();
-
-                for( int j=0; j<items.getLength(); j++ ) {
-                    Node item = items.item(j);
-
-                    if( item.getNodeName().equals("member") ) {
-                        ScalingGroup group = toScalingGroup(ctx, item);
-
-                        if( (group != null && (options != null && !options.hasCriteria()))
-		                        || (group != null && (options != null && options.hasCriteria() && options.matches(group))) ) {
-                            list.add(group);
-                        }
-                    }
-                }
-            }
-
-	        NodeList moreLaunchConfigurations = doc.getElementsByTagName(AWSCloud.P_NEXT_TOKEN);
-	        if (moreLaunchConfigurations != null && moreLaunchConfigurations.getLength() == 1) {
-		        if (moreLaunchConfigurations.item(0) != null && moreLaunchConfigurations.item(0).getFirstChild() != null) {
-			        String nextBatch = moreLaunchConfigurations.item(0).getFirstChild().getNodeValue();
-			        list.addAll(this.listScalingGroups(options, nextBatch));
-		        }
-	        }
-
-	        return list;
-        }
-        finally {
-            APITrace.end();
-        }
+		provider.hold();
+		populator = new PopulatorThread<ScalingGroup>(new JiteratorPopulator<ScalingGroup>() {
+			public void populate( @Nonnull Jiterator<ScalingGroup> iterator ) throws CloudException, InternalException {
+				try {
+					populateScalingGroups(iterator, null, options);
+				} finally {
+					provider.release();
+				}
+			}
+		});
+		populator.populate();
+		return populator.getResult();
     }
+
+	private void populateScalingGroups( @Nonnull Jiterator<ScalingGroup> iterator, @Nullable String nextToken, AutoScalingGroupFilterOptions options ) throws CloudException, InternalException {
+		APITrace.begin(provider, "AutoScaling.listScalingGroups");
+		try {
+			ProviderContext ctx = provider.getContext();
+
+			if( ctx == null ) {
+				throw new CloudException("No context has been set for this request");
+			}
+
+			Map<String,String> parameters = getAutoScalingParameters(provider.getContext(), EC2Method.DESCRIBE_AUTO_SCALING_GROUPS);
+			EC2Method method;
+			NodeList blocks;
+			Document doc;
+
+			AWSCloud.addValueIfNotNull(parameters, AWSCloud.P_NEXT_TOKEN, nextToken);
+
+			method = new EC2Method(provider, getAutoScalingUrl(), parameters);
+			try {
+				doc = method.invoke();
+			}
+			catch( EC2Exception e ) {
+				logger.error(e.getSummary());
+				throw new CloudException(e);
+			}
+			blocks = doc.getElementsByTagName("AutoScalingGroups");
+			for( int i=0; i<blocks.getLength(); i++ ) {
+				NodeList items = blocks.item(i).getChildNodes();
+
+				for( int j=0; j<items.getLength(); j++ ) {
+					Node item = items.item(j);
+
+					if( item.getNodeName().equals("member") ) {
+						ScalingGroup group = toScalingGroup(ctx, item);
+
+						if( (group != null && (options != null && !options.hasCriteria()))
+								|| (group != null && (options != null && options.hasCriteria() && options.matches(group))) ) {
+							iterator.push(group);
+						}
+					}
+				}
+			}
+
+		}
+		finally {
+			APITrace.end();
+		}
+	}
 
     @Override
     public @Nonnull String[] mapServiceAction(@Nonnull ServiceAction action) {
