@@ -1183,7 +1183,7 @@ public class AutoScaling extends AbstractAutoScalingSupport {
     }
 
     @Override
-    public Collection<AutoScalingGroupNotificationConfig> listNotificationConfigs(final String[] scalingGroupIds) throws CloudException, InternalException {
+    public Collection<AutoScalingGroupNotificationConfig> listNotificationConfigs( final String[] scalingGroupIds ) throws CloudException, InternalException {
         PopulatorThread<AutoScalingGroupNotificationConfig> populatorThread;
 
         provider.hold();
@@ -1563,8 +1563,9 @@ public class AutoScaling extends AbstractAutoScalingSupport {
             }
             else if( name.equalsIgnoreCase("VPCZoneIdentifier") ) {
               Node subnetChild = attr.getFirstChild();
-              if(subnetChild != null) {
-                group.setSubnetIds(subnetChild.getNodeValue());
+              if( subnetChild != null ) {
+                String subnets = subnetChild.getNodeValue();
+                group.setSubnets( subnets.contains(",") ? subnets.split("\\s*,\\s*") : new String[]{subnets} );
               }
             }
             else if( name.equalsIgnoreCase("AutoScalingGroupName") ) {
