@@ -281,12 +281,7 @@ public class ElasticLoadBalancer extends AbstractLoadBalancerSupport<AWSCloud> {
 
                 modifyLoadBalancerAttributes(
                         name,
-                        LbAttributesOptions.getInstance(
-                                options.getCrossDataCenter(),
-                                options.getConnectionDraining(),
-                                options.getConnectionDrainingTimeout(),
-                                options.getIdleConnectionTimeout()
-                        )
+                        options.getLbAttributesOptions()
                 );
 
                 for( LoadBalancerEndpoint endpoint : options.getEndpoints() ) {
@@ -1160,22 +1155,10 @@ public class ElasticLoadBalancer extends AbstractLoadBalancerSupport<AWSCloud> {
             Map<String, String> parameters = getELBParameters(ctx, ELBMethod.MODIFY_LOADBALANCER_ATTRIBUTES);
 
             parameters.put("LoadBalancerName", id);
-
-            if (options.getCrossDataCenter() != null) {
-                parameters.put("LoadBalancerAttributes.CrossZoneLoadBalancing.Enabled", options.getCrossDataCenter().toString());
-            }
-
-            if (options.getConnectionDraining() != null) {
-                parameters.put("LoadBalancerAttributes.ConnectionDraining.Enabled", options.getConnectionDraining().toString());
-            }
-
-            if (options.getConnectionDrainingTimeout() != null) {
-                parameters.put("LoadBalancerAttributes.ConnectionDraining.Timeout", options.getConnectionDrainingTimeout().toString());
-            }
-
-            if (options.getIdleConnectionTimeout() != null) {
-                parameters.put("LoadBalancerAttributes.ConnectionSettings.IdleTimeout", options.getIdleConnectionTimeout().toString());
-            }
+            parameters.put("LoadBalancerAttributes.CrossZoneLoadBalancing.Enabled", String.valueOf(options.isCrossDataCenter()));
+            parameters.put("LoadBalancerAttributes.ConnectionDraining.Enabled", String.valueOf(options.isConnectionDraining()));
+            parameters.put("LoadBalancerAttributes.ConnectionDraining.Timeout", String.valueOf(options.getConnectionDrainingTimeout()));
+            parameters.put("LoadBalancerAttributes.ConnectionSettings.IdleTimeout", String.valueOf(options.getIdleConnectionTimeout()));
 
             ELBMethod method = new ELBMethod(provider, ctx, parameters);
             try {
@@ -1480,7 +1463,6 @@ public class ElasticLoadBalancer extends AbstractLoadBalancerSupport<AWSCloud> {
         List<String> firewallIds = new ArrayList<String>();
         String regionId = getContext().getRegionId();
         String lbName = null, description = null, lbId = null, cname = null;
-        LoadBalancerHealthCheck lbhc = null;
         boolean withHealthCheck = false;
         long created = 0L;
         LbType type = null;
@@ -1539,11 +1521,6 @@ public class ElasticLoadBalancer extends AbstractLoadBalancerSupport<AWSCloud> {
                         }
                     }
                 }
-            }
-            else if(name.equalsIgnoreCase("healthcheck")) {
-                lbhc = toLBHealthCheck(lbName, attr);
-                lbhc.addProviderLoadBalancerId(lbName);
-                lbhc.setName(toHCName(lbName));
             }
             else if( name.equals("instances") ) {
                 if( attr.hasChildNodes() ) {
@@ -1658,9 +1635,6 @@ public class ElasticLoadBalancer extends AbstractLoadBalancerSupport<AWSCloud> {
         }
         if( withHealthCheck ) {
             lb.setProviderLBHealthCheckId(lbId);
-        }
-        if (lbhc != null) {
-            lb.setHealthCheck(lbhc);
         }
         return lb;
     }
