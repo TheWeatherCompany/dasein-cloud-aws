@@ -10,7 +10,7 @@ import org.dasein.cloud.platform.support.model.options.TicketAttachmentDataOptio
  * @author Eugene Yaroslavtsev
  * @since 19.08.2014
  */
-@JsonInclude( Include.NON_NULL )
+@JsonInclude(Include.NON_NULL)
 public class CaseAttachmentDataOptions {
 
     @JsonIgnore
@@ -27,12 +27,12 @@ public class CaseAttachmentDataOptions {
         return new CaseAttachmentDataOptions(data);
     }
 
-    @JsonProperty( "data" )
+    @JsonProperty("data")
     public byte[] getData() {
         return _options.getData();
     }
 
-    @JsonProperty( "fileName" )
+    @JsonProperty("fileName")
     public String getFileName() {
         return _options.getFileName();
     }

@@ -11,7 +11,7 @@ import javax.annotation.Nonnull;
  * User: Eugene Yaroslavtsev
  * Date: 21.08.2014
  */
-@JsonInclude( JsonInclude.Include.NON_NULL )
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class CaseListCommunicationOptions {
 
     @JsonIgnore
@@ -33,27 +33,27 @@ public class CaseListCommunicationOptions {
         return new CaseListCommunicationOptions(options, 100);
     }
 
-    @JsonProperty( "afterTime" )
+    @JsonProperty("afterTime")
     public String getAfterTime() {
         return _options.getAfterTime();
     }
 
-    @JsonProperty( "beforeTime" )
+    @JsonProperty("beforeTime")
     public String getBeforeTime() {
         return _options.getBeforeTime();
     }
 
-    @JsonProperty( "caseId" )
+    @JsonProperty("caseId")
     public String getCaseId() {
         return _options.getTicketId();
     }
 
-    @JsonProperty( "maxResults" )
+    @JsonProperty("maxResults")
     public Integer getMaxResults() {
         return _maxResults;
     }
 
-    @JsonProperty( "nextToken" )
+    @JsonProperty("nextToken")
     public String getNextToken() {
         return _nextToken;
     }
