@@ -5,6 +5,8 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.dasein.cloud.platform.support.model.options.TicketListRepliesOptions;
 
+import javax.annotation.Nonnull;
+
 /**
  * User: Eugene Yaroslavtsev
  * Date: 21.08.2014
@@ -15,21 +17,20 @@ public class CaseListCommunicationOptions {
     @JsonIgnore
     private TicketListRepliesOptions _options;
     @JsonIgnore
-    private String _nextToken;
+    private String _nextToken = null;
     @JsonIgnore
     private Integer _maxResults;
 
     private CaseListCommunicationOptions() {
     }
 
-    private CaseListCommunicationOptions( TicketListRepliesOptions options, String nextToken, Integer maxResults ) {
-        this._nextToken = nextToken;
+    private CaseListCommunicationOptions( TicketListRepliesOptions options, Integer maxResults ) {
         this._maxResults = maxResults;
         this._options = options;
     }
 
     public static CaseListCommunicationOptions getInstance( TicketListRepliesOptions options ) {
-        return new CaseListCommunicationOptions(options, null, 100);
+        return new CaseListCommunicationOptions(options, 100);
     }
 
     @JsonProperty( "afterTime" )
@@ -58,8 +59,9 @@ public class CaseListCommunicationOptions {
     }
 
     @JsonIgnore
-    public void setNextToken( String nextToken ) {
-        _nextToken = nextToken;
+    public @Nonnull CaseListCommunicationOptions withNextToken( String nextToken ) {
+        this._nextToken = nextToken;
+        return this;
     }
 
 }

@@ -305,7 +305,7 @@ public class CaseSupport extends AbstractTicketService {
                 }
                 String nextToken = recentCommunications.getNextToken();
                 if( nextToken != null ) {
-                    options.setNextToken(nextToken);
+                    options.withNextToken(nextToken);
                     populateReplies(replyJiterator, options);
                 }
             } catch( JsonProcessingException e ) {
@@ -340,7 +340,7 @@ public class CaseSupport extends AbstractTicketService {
                     ticketJiterator.push(caze.buildTicket());
                 }
                 if( caseDetails.getNextToken() != null ) {
-                    options.setNextToken(caseDetails.getNextToken());
+                    options.withNextToken(caseDetails.getNextToken());
                     populateTickets(ticketJiterator, options);
                 }
             } catch( JsonProcessingException e ) {

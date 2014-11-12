@@ -19,26 +19,25 @@ public class CaseListOptions {
     @JsonIgnore
     private TicketListOptions _options;
     @JsonIgnore
-    private String _nextToken;
+    private String _nextToken = null;
     @JsonIgnore
     private Integer _maxResults;
 
     private CaseListOptions() {
     }
 
-    private CaseListOptions( TicketListOptions _options, String nextToken, Integer maxResults ) {
+    private CaseListOptions( TicketListOptions _options, Integer maxResults ) {
         this._maxResults = maxResults;
-        this._nextToken = nextToken;
         this._options = _options;
     }
 
     public static CaseListOptions getInstance( TicketListOptions options ) {
-        return new CaseListOptions(options, null, 100);
+        return new CaseListOptions(options, 100);
     }
 
     public static CaseListOptions getInstance( TicketGetOptions options ) {
         CaseListOptions caseListOptions = buildWithTicketId(options.getTicketId(), null);
-        caseListOptions.setIncludeCommunications(options.getIncludeCommunications());
+        caseListOptions.withIncludeCommunications(options.getIncludeCommunications());
         return caseListOptions;
     }
 
@@ -53,7 +52,7 @@ public class CaseListOptions {
     private static CaseListOptions buildWithTicketId( String id, Integer maxResults ) {
         TicketListOptions ticketListOptions = new TicketListOptions();
         ticketListOptions.setCaseIdList(new String[]{id});
-        return new CaseListOptions(ticketListOptions, null, maxResults);
+        return new CaseListOptions(ticketListOptions, maxResults);
     }
 
     @JsonProperty( value = "afterTime" )
@@ -107,12 +106,14 @@ public class CaseListOptions {
     }
 
     @JsonIgnore
-    public void setNextToken( String nextToken ) {
-        _nextToken = nextToken;
+    public CaseListOptions withNextToken( String nextToken ) {
+        this._nextToken = nextToken;
+        return this;
     }
 
     @JsonIgnore
-    public void setIncludeCommunications( Boolean includeCommunications ) {
-        _options.setIncludeCommunications(includeCommunications);
+    public CaseListOptions withIncludeCommunications( Boolean includeCommunications ) {
+        this._options.setIncludeCommunications(includeCommunications);
+        return this;
     }
 }
