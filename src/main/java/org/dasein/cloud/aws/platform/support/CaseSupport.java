@@ -26,6 +26,7 @@ import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -178,9 +179,7 @@ public class CaseSupport extends AbstractTicketService {
             }
             List<TicketAttachment> result = new ArrayList<TicketAttachment>();
             for( TicketReply reply : ticket.getRecentReplies() ) {
-                for( TicketAttachment attachment : reply.getTicketAttachmentSet() ) {
-                    result.add(attachment);
-                }
+                Collections.addAll(result, reply.getTicketAttachmentSet());
             }
             return result;
         } finally {
