@@ -48,15 +48,12 @@ public class CaseSupport extends AbstractTicketService {
     public Collection<Ticket> listTickets( @Nonnull final TicketListOptions options ) throws InternalException, CloudException {
         PopulatorThread<Ticket> populatorThread;
 
-        final Boolean isIncludeReplies = options.getIncludeCommunications();
-        options.setIncludeCommunications(false);
-
         provider.hold();
         populatorThread = new PopulatorThread<Ticket>(new JiteratorPopulator<Ticket>() {
             @Override
             public void populate( @Nonnull Jiterator<Ticket> ticketJiterator ) throws Exception {
                 try {
-                    populateTickets(ticketJiterator, CaseListOptions.getInstance(options), isIncludeReplies);
+                    populateTickets(ticketJiterator, CaseListOptions.getInstance(options));
                 } finally {
                     provider.release();
                 }
@@ -332,7 +329,7 @@ public class CaseSupport extends AbstractTicketService {
      * @throws InternalException
      * @throws CloudException
      */
-    private void populateTickets( Jiterator<Ticket> ticketJiterator, CaseListOptions options, Boolean isIncludeReplies ) throws InternalException, CloudException {
+    private void populateTickets( Jiterator<Ticket> ticketJiterator, CaseListOptions options ) throws InternalException, CloudException {
         APITrace.begin(provider, "Support.listTickets");
         try {
             CaseSupportMethod method = new CaseSupportMethod(provider, CaseSupportTarget.DESCRIBE_CASES);
@@ -341,18 +338,11 @@ public class CaseSupport extends AbstractTicketService {
                 String result = method.invoke(new ObjectMapper().writeValueAsString(options));
                 CaseDetails caseDetails = new ObjectMapper().readValue(result, CaseDetails.class);
                 for( Case caze : caseDetails.getCases() ) {
-                    Ticket ticket;
-                    if( isIncludeReplies != null && isIncludeReplies ) {
-                        ticket = fillTicketReplies(caze.buildTicket());
-                    }
-                    else {
-                        ticket = caze.buildTicket();
-                    }
-                    ticketJiterator.push(ticket);
+                    ticketJiterator.push(caze.buildTicket());
                 }
                 if( caseDetails.getNextToken() != null ) {
                     options.setNextToken(caseDetails.getNextToken());
-                    populateTickets(ticketJiterator, options, isIncludeReplies);
+                    populateTickets(ticketJiterator, options);
                 }
             } catch( JsonProcessingException e ) {
                 logger.error(e);
@@ -369,7 +359,7 @@ public class CaseSupport extends AbstractTicketService {
     /**
      * Fills replies in ticket
      *
-     * @param ticket ticket
+     * @param ticket the ticket
      * @return incoming ticket with replies
      * @throws InternalException
      * @throws CloudException
