@@ -9,33 +9,33 @@ import java.util.Map;
  * User: Eugene Yaroslavtsev
  * Date: 22.08.2014
  */
-@JsonInclude( JsonInclude.Include.NON_NULL )
-@JsonPropertyOrder( {"attachmentSetId", "expiryTime"} )
+@JsonInclude(JsonInclude.Include.NON_NULL)
+@JsonPropertyOrder({"attachmentSetId", "expiryTime"})
 public class CaseSetAttachmentResponse {
 
-    @JsonProperty( "attachmentSetId" )
+    @JsonProperty("attachmentSetId")
     private String attachmentSetId;
-    @JsonProperty( "expiryTime" )
+    @JsonProperty("expiryTime")
     private String expiryTime;
     @JsonIgnore
     private Map<String, Object> additionalProperties = new HashMap<String, Object>();
 
-    @JsonProperty( "attachmentSetId" )
+    @JsonProperty("attachmentSetId")
     public String getAttachmentSetId() {
         return attachmentSetId;
     }
 
-    @JsonProperty( "attachmentSetId" )
+    @JsonProperty("attachmentSetId")
     public void setAttachmentSetId( String attachmentSetId ) {
         this.attachmentSetId = attachmentSetId;
     }
 
-    @JsonProperty( "expiryTime" )
+    @JsonProperty("expiryTime")
     public String getExpiryTime() {
         return expiryTime;
     }
 
-    @JsonProperty( "expiryTime" )
+    @JsonProperty("expiryTime")
     public void setExpiryTime( String expiryTime ) {
         this.expiryTime = expiryTime;
     }

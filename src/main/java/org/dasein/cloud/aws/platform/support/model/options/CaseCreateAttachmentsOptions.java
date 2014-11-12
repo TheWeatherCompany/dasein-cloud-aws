@@ -14,7 +14,7 @@ import java.util.List;
  * @author Eugene Yaroslavtsev
  * @since 19.08.2014
  */
-@JsonInclude( Include.NON_NULL )
+@JsonInclude(Include.NON_NULL)
 public class CaseCreateAttachmentsOptions {
 
     @JsonIgnore
@@ -31,7 +31,7 @@ public class CaseCreateAttachmentsOptions {
         return new CaseCreateAttachmentsOptions(options);
     }
 
-    @JsonProperty( "attachments" )
+    @JsonProperty("attachments")
     public List<CaseAttachmentDataOptions> getAttachments() {
         List<CaseAttachmentDataOptions> attachments = new ArrayList<CaseAttachmentDataOptions>();
         for( TicketAttachmentDataOptions data : _options.getAttachments() ) {
