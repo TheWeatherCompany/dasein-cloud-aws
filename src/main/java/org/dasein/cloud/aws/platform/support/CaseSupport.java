@@ -25,7 +25,6 @@ import org.dasein.util.PopulatorThread;
 import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
@@ -45,7 +44,7 @@ public class CaseSupport extends AbstractTicketService {
     }
 
     @Override
-    public Collection<Ticket> listTickets( @Nonnull final TicketListOptions options ) throws InternalException, CloudException {
+    public Iterable<Ticket> listTickets( @Nonnull final TicketListOptions options ) throws InternalException, CloudException {
         PopulatorThread<Ticket> populatorThread;
 
         provider.hold();
@@ -125,7 +124,7 @@ public class CaseSupport extends AbstractTicketService {
     }
 
     @Override
-    public Collection<TicketReply> listReplies( @Nonnull final TicketListRepliesOptions options ) throws InternalException, CloudException {
+    public Iterable<TicketReply> listReplies( @Nonnull final TicketListRepliesOptions options ) throws InternalException, CloudException {
         PopulatorThread<TicketReply> populatorThread;
 
         provider.hold();
@@ -166,7 +165,7 @@ public class CaseSupport extends AbstractTicketService {
     }
 
     @Override
-    public Collection<TicketAttachment> listAttachments( @Nonnull TicketListAttachmentsOptions options ) throws InternalException, CloudException {
+    public Iterable<TicketAttachment> listAttachments( @Nonnull TicketListAttachmentsOptions options ) throws InternalException, CloudException {
         APITrace.begin(provider, "Support.listAttachments");
         try {
             Ticket ticket = getCase(CaseListOptions.getInstance(options)).buildTicket();
@@ -185,7 +184,7 @@ public class CaseSupport extends AbstractTicketService {
     }
 
     @Override
-    public Collection<TicketService> listServices( @Nonnull TicketListServicesOptions options ) throws InternalException, CloudException {
+    public Iterable<TicketService> listServices( @Nonnull TicketListServicesOptions options ) throws InternalException, CloudException {
         APITrace.begin(provider, "Support.listServices");
         try {
             CaseSupportMethod method = new CaseSupportMethod(provider, CaseSupportTarget.DESCRIBE_SERVICES);
@@ -367,7 +366,7 @@ public class CaseSupport extends AbstractTicketService {
     private Ticket fillTicketReplies( Ticket ticket ) throws InternalException, CloudException {
         TicketListRepliesOptions options = new TicketListRepliesOptions();
         options.setTicketId(ticket.getTicketId());
-        ticket.setRecentReplies(new ArrayList<TicketReply>(listReplies(options)));
+        ticket.setRecentReplies(listReplies(options));
         return ticket;
     }
 
