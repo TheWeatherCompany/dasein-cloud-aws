@@ -9,32 +9,32 @@ import java.util.Map;
  * @author Eugene Yaroslavtsev
  * @since 18.08.2014
  */
-@JsonInclude( JsonInclude.Include.NON_NULL )
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class CaseErrorResponse {
 
-    @JsonProperty( value = "__type" )
+    @JsonProperty(value = "__type")
     private String type;
-    @JsonProperty( value = "message" )
+    @JsonProperty(value = "message")
     private String message;
     @JsonIgnore
     private Map<String, Object> additionalProperties = new HashMap<String, Object>();
 
-    @JsonProperty( value = "__type" )
+    @JsonProperty(value = "__type")
     public String getType() {
         return type;
     }
 
-    @JsonProperty( value = "__type" )
+    @JsonProperty(value = "__type")
     public void setType( String type ) {
         this.type = type;
     }
 
-    @JsonProperty( value = "message" )
+    @JsonProperty(value = "message")
     public String getMessage() {
         return message;
     }
 
-    @JsonProperty( value = "message" )
+    @JsonProperty(value = "message")
     public void setMessage( String message ) {
         this.message = message;
     }

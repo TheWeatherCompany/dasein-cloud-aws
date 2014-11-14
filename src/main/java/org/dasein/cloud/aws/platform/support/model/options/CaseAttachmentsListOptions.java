@@ -11,7 +11,7 @@ import org.dasein.cloud.platform.support.model.options.TicketGetAttachmentOption
  * @author Eugene Yaroslavtsev
  * @since 15.08.2014
  */
-@JsonInclude( Include.NON_NULL )
+@JsonInclude(Include.NON_NULL)
 public class CaseAttachmentsListOptions {
 
     @JsonIgnore
@@ -34,7 +34,7 @@ public class CaseAttachmentsListOptions {
         return new CaseAttachmentsListOptions(ticketAttachmentsListOptions);
     }
 
-    @JsonProperty( value = "attachmentId" )
+    @JsonProperty(value = "attachmentId")
     public String getAttachmentId() {
         return _options.getAttachmentId();
     }

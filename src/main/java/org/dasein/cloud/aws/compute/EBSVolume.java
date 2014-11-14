@@ -53,6 +53,7 @@ public class EBSVolume extends AbstractVolumeSupport {
     static private final String VOLUME_PRODUCT_IOPS = "io1";
     static private final String VOLUME_PRODUCT_STANDARD = "standard";
     static private final String VOLUME_PRODUCT_SSD = "gp2";
+    public static final String VOLUME_PRODUCT_EPHEMERAL = "ephemeral";
 
     private AWSCloud provider = null;
     private EBSVolumeCapabilities capabilities;
@@ -278,6 +279,7 @@ public class EBSVolume extends AbstractVolumeSupport {
                 prds.add(VolumeProduct.getInstance( VOLUME_PRODUCT_STANDARD, "Standard", "Standard EBS with no IOPS Guarantees", VolumeType.HDD, getMinimumVolumeSize(), "USD", 0, 0, rawPrice, 0f));
                 prds.add(VolumeProduct.getInstance( VOLUME_PRODUCT_IOPS, "IOPS EBS", "EBS Volume with IOPS guarantees", VolumeType.HDD, getMinimumVolumeSize(), "USD", 100, 4000, 0.125f, 0.1f));
                 prds.add(VolumeProduct.getInstance( VOLUME_PRODUCT_SSD, "SSD EBS", "SSD-based Persistent Volume", VolumeType.SSD, new Storage<Gigabyte>(1, Storage.GIGABYTE), "USD", 3, 3000, 0.1f, 0f));
+                prds.add(VolumeProduct.getInstance( VOLUME_PRODUCT_EPHEMERAL, "Ephemeral", "Ephemeral store", VolumeType.EPHEMERAL, new Storage<Gigabyte>(-1, Storage.GIGABYTE) , "USD", 0, 0, 0f, 0f));
 
                 cache.put(getContext(), prds);
                 products = prds;
