@@ -423,7 +423,7 @@ public class EBSSnapshot extends AbstractSnapshotSupport {
                             Map<String,String> tags = options.getTags();
 
                             if( tags != null && !tags.isEmpty() ) {
-                                provider.putExtraParameters( parameters, provider.getTagFilterParams( options.getTags() ) );
+                                AWSCloud.addExtraParameters( parameters, provider.getTagFilterParams( options.getTags() ) );
                             }
                         }
 
@@ -613,7 +613,7 @@ public class EBSSnapshot extends AbstractSnapshotSupport {
                             Map<String,String> tags = options.getTags();
 
                             if( tags != null && !tags.isEmpty() ) {
-                                provider.putExtraParameters( parameters, provider.getTagFilterParams( options.getTags() ) );
+                                AWSCloud.addExtraParameters( parameters, provider.getTagFilterParams( options.getTags() ) );
                                 SnapshotFilterOptions sfo = SnapshotFilterOptions.getInstance();
 
                                 if( options.getAccountNumber() != null ) {
@@ -969,25 +969,6 @@ public class EBSSnapshot extends AbstractSnapshotSupport {
         finally {
             APITrace.end();
         }
-    }
-
-    @Override
-    public void updateTags(@Nonnull String[] snapshotIds, boolean asynchronous, @Nonnull Tag... tags) throws CloudException, InternalException {
-        APITrace.begin(getProvider(), "Snapshot.updateTags");
-        try {
-            if (asynchronous) {
-                ((AWSCloud) getProvider()).createTags(snapshotIds, tags);
-            } else {
-                ((AWSCloud) getProvider()).createTagsSynchronously(snapshotIds, tags);
-            }
-        } finally {
-            APITrace.end();
-        }
-    }
-
-    @Override
-    public void updateTags(@Nonnull String snapshotId, boolean asynchronous, @Nonnull Tag... tags) throws CloudException, InternalException {
-        updateTags(new String[] {snapshotId}, asynchronous, tags);
     }
 
 }

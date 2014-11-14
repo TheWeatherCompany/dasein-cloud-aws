@@ -757,7 +757,7 @@ public class AMI extends AbstractImageSupport {
 
         Map<String, String> extraParameters = new HashMap<String, String>();
 
-        provider.putExtraParameters( extraParameters, provider.getTagFilterParams( options.getTags(), filter ) );
+        AWSCloud.addExtraParameters( extraParameters, provider.getTagFilterParams( options.getTags(), filter ) );
         parameters.putAll(extraParameters);
         String regex = options.getRegex();
 
@@ -1713,26 +1713,6 @@ public class AMI extends AbstractImageSupport {
         APITrace.begin(getProvider(), "Image.updateTags");
         try {
             provider.createTags(imageIds, tags);
-        }
-        finally {
-            APITrace.end();
-        }
-    }
-
-    @Override
-    public void updateTags(@Nonnull String imageId, boolean asynchronous, @Nonnull Tag... tags) throws CloudException, InternalException {
-        updateTags(new String[]{imageId}, asynchronous, tags);
-    }
-
-    @Override
-    public void updateTags(@Nonnull String[] imageIds, boolean asynchronous, @Nonnull Tag... tags) throws CloudException, InternalException {
-        APITrace.begin(getProvider(), "Image.updateTags");
-        try {
-            if(asynchronous) {
-                provider.createTags(imageIds, tags);
-            } else {
-                provider.createTagsSynchronously(imageIds, tags);
-            }
         }
         finally {
             APITrace.end();

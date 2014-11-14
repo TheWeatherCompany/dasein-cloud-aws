@@ -351,11 +351,11 @@ public class ElasticLoadBalancer extends AbstractLoadBalancerSupport<AWSCloud> {
 
             Map<String, String> parameters = provider.getStandardParameters(getContext(),
                     IAMMethod.CREATE_SSL_CERTIFICATE, IAMMethod.VERSION);
-            provider.putValueIfNotNull(parameters, "CertificateBody", options.getCertificateBody());
-            provider.putValueIfNotNull(parameters, "CertificateChain", options.getCertificateChain());
-            provider.putValueIfNotNull(parameters, "Path", options.getPath());
-            provider.putValueIfNotNull(parameters, "PrivateKey", options.getPrivateKey());
-            provider.putValueIfNotNull(parameters, "ServerCertificateName", options.getCertificateName());
+            AWSCloud.addValueIfNotNull(parameters, "CertificateBody", options.getCertificateBody());
+            AWSCloud.addValueIfNotNull(parameters, "CertificateChain", options.getCertificateChain());
+            AWSCloud.addValueIfNotNull(parameters, "Path", options.getPath());
+            AWSCloud.addValueIfNotNull(parameters, "PrivateKey", options.getPrivateKey());
+            AWSCloud.addValueIfNotNull(parameters, "ServerCertificateName", options.getCertificateName());
 
             Document doc;
             IAMMethod method = new IAMMethod(provider, parameters);
@@ -725,7 +725,7 @@ public class ElasticLoadBalancer extends AbstractLoadBalancerSupport<AWSCloud> {
                     Node item = items.item(j);
 
                     if( item.getNodeName().equals("member") ) {
-                        LoadBalancer loadBalancer = toLoadBalancer( item );
+                        LoadBalancer loadBalancer = toLoadBalancer(item);
 
                         if( loadBalancer != null ) {
                             list.add(loadBalancer);
@@ -1065,7 +1065,7 @@ public class ElasticLoadBalancer extends AbstractLoadBalancerSupport<AWSCloud> {
     //TODO: Get instance health
 
     @Override
-    public LoadBalancerHealthCheck getLoadBalancerHealthCheck( @Nullable String providerLBHealthCheckId, @Nullable String providerLoadBalancerId ) throws CloudException, InternalException {
+    public LoadBalancerHealthCheck getLoadBalancerHealthCheck( @Nonnull String providerLBHealthCheckId, @Nullable String providerLoadBalancerId ) throws CloudException, InternalException {
         APITrace.begin(provider, "LB.getLoadBalancerHealthCheck");
         try {
             Map<String, String> parameters = getELBParameters(getContext(), ELBMethod.DESCRIBE_LOAD_BALANCERS);
@@ -1073,7 +1073,7 @@ public class ElasticLoadBalancer extends AbstractLoadBalancerSupport<AWSCloud> {
             NodeList blocks;
             Document doc;
 
-            if( providerLoadBalancerId.length() > 32 ) {
+            if( providerLoadBalancerId != null && providerLoadBalancerId.length() > 32 ) {
                 return null;
             }
             parameters.put("LoadBalancerNames.member.1", providerLoadBalancerId);
@@ -1385,16 +1385,14 @@ public class ElasticLoadBalancer extends AbstractLoadBalancerSupport<AWSCloud> {
                 String targetString = attr.getFirstChild().getNodeValue();
                 String[] parts = targetString.split(":");
                 protocol = LoadBalancerHealthCheck.HCProtocol.valueOf(parts[0]);
-                if( parts[1].endsWith("/") ) {
-                    port = Integer.parseInt(parts[1].substring(0, parts[1].length() - 1));
-                    path = "/";
+
+                int index = parts[1].indexOf("/");
+                if( index == -1 ) {
+                    port = Integer.parseInt(parts[1]);
                 }
                 else {
-                    String[] portAndPath = parts[1].split("/");
-                    port = Integer.parseInt(portAndPath[0]);
-                    if( portAndPath.length > 1 ) {
-                        path = "/" + portAndPath[1];
-                    }
+                    port = Integer.parseInt(parts[1].substring(0, index));
+                    path = parts[1].substring(index, parts[1].length());
                 }
             }
             else if( name.equals("healthythreshold") ) {
@@ -1409,6 +1407,7 @@ public class ElasticLoadBalancer extends AbstractLoadBalancerSupport<AWSCloud> {
         }
         LoadBalancerHealthCheck lbhc = LoadBalancerHealthCheck.getInstance(lbId, protocol, port, path, interval, timeout, healthyCount, unHealthyCount);
         if( lbId != null ) {
+            lbhc.addProviderLoadBalancerId(lbId);
             lbhc.setName(toHCName(lbId));
         }
         return lbhc;
