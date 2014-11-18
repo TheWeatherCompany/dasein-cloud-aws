@@ -628,11 +628,7 @@ public class AWSCloud extends AbstractCloud {
     @Override
     public @Nullable QuotaServices getQuotaServices() {
         EC2Provider p = getEC2Provider();
-
-        if( p.isAWS() || p.isEnStratus() ) {
-            return new EC2QuotaService(this);
-        }
-        return null;
+        return new EC2QuotaService(this);
     }
 
     @Override

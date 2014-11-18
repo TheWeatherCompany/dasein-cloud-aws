@@ -1,5 +1,6 @@
 package org.dasein.cloud.aws.platform.support;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
@@ -12,6 +13,7 @@ import org.dasein.cloud.InternalException;
 import org.dasein.cloud.aws.AWSCloud;
 import org.dasein.cloud.aws.platform.support.model.response.CaseErrorResponse;
 
+import javax.annotation.Nonnull;
 import javax.servlet.http.HttpServletResponse;
 import java.io.*;
 import java.net.URI;
@@ -30,27 +32,38 @@ public class CaseSupportMethod {
     private static final Logger wire = AWSCloud.getWireLogger(CaseSupportMethod.class);
     private static final String URL = "https://support.us-east-1.amazonaws.com";
     private static final String CONTENT_TYPE = "application/x-amz-json-1.1";
-    private static final String service = "support";
-    private static String bodyText = "{}";
+    private static final String SERVICE = "support";
     private AWSCloud provider;
     private CaseSupportTarget AMZ_TARGET;
+    private ObjectMapper objectMapper;
 
     public CaseSupportMethod( AWSCloud provider, CaseSupportTarget target ) {
         this.provider = provider;
         this.AMZ_TARGET = target;
+        this.objectMapper = new ObjectMapper();
     }
 
-    public String invoke() throws CloudException, InternalException {
-        return invoke(bodyText);
+    public <T> T invoke(Object request, Class<T> responseType) throws CloudException, InternalException {
+        String rawResult = null;
+        try {
+            rawResult = invoke(objectMapper.writeValueAsString(request));
+            return objectMapper.readValue(rawResult, responseType);
+        } catch (JsonProcessingException e) {
+            logger.error("Unable to prepare cloud request", e);
+            throw new CloudException("Unable to process parameters" + e.getMessage());
+        } catch (IOException e) {
+            logger.error("Invalid cloud response: " + rawResult, e);
+            throw new CloudException("Invalid cloud response: " + e.getMessage());
+        }
     }
 
-    public String invoke( String request_parameters ) throws CloudException, InternalException {
+    private String invoke( @Nonnull String requestParams ) throws CloudException, InternalException {
         if( wire.isDebugEnabled() ) {
             wire.debug("");
             wire.debug("----------------------------------------------------------------------------------");
         }
         try {
-            return invoke(request_parameters, 1);
+            return invoke(requestParams, 1);
         } finally {
             if( wire.isDebugEnabled() ) {
                 wire.debug("----------------------------------------------------------------------------------");
@@ -59,13 +72,10 @@ public class CaseSupportMethod {
         }
     }
 
-    private String invoke( String request_parameters, int attempts ) throws CloudException, InternalException {
+    private String invoke( String requestParams, int attempts ) throws CloudException, InternalException {
 
         HttpClient httpClient = null;
         try {
-            if( request_parameters != null ) {
-                bodyText = request_parameters;
-            }
             httpClient = provider.getClient();
 
             Map<String, String> map = new HashMap<String, String>();
@@ -79,8 +89,8 @@ public class CaseSupportMethod {
                 request.addHeader(enumSet.getKey(), enumSet.getValue());
             }
             map.put("host", new URI(URL).getHost());
-            request.addHeader("Authorization", getAuthorizationHeader(map));
-            request.setEntity(getParameters());
+            request.addHeader("Authorization", getAuthorizationHeader(map, getRequestBodyHash(requestParams)));
+            request.setEntity(getParameters(requestParams));
 
             try {
                 HttpResponse response = httpClient.execute(request);
@@ -109,7 +119,7 @@ public class CaseSupportMethod {
                         } catch( InterruptedException e ) {
                             // ignore me
                         }
-                        return invoke(request_parameters, ++attempts);
+                        return invoke(requestParams, ++attempts);
                     }
 
                 }
@@ -141,7 +151,7 @@ public class CaseSupportMethod {
         }
     }
 
-    private String getAuthorizationHeader( Map<String, String> paramsForHeader ) throws InternalException {
+    private String getAuthorizationHeader(Map<String, String> paramsForHeader, String requestBodyHash) throws InternalException {
         final String accessId;
         final String secret;
         try {
@@ -152,25 +162,23 @@ public class CaseSupportMethod {
             throw new InternalException(e);
         }
 
-        return provider.getV4Authorization(accessId, secret, "POST", URL, service, paramsForHeader, getRequestBodyHash());
-
-
+        return provider.getV4Authorization(accessId, secret, "POST", URL, SERVICE, paramsForHeader, requestBodyHash);
     }
 
-    private static StringEntity getParameters() throws InternalException {
+    private static StringEntity getParameters(String payload) throws InternalException {
         try {
-            return new StringEntity(bodyText);
+            return new StringEntity(payload);
         } catch( UnsupportedEncodingException e ) {
             throw new InternalException(e);
         }
     }
 
-    private static String getRequestBodyHash() throws InternalException {
-        if( bodyText == null ) {
+    private static String getRequestBodyHash(String payload) throws InternalException {
+        if( payload == null ) {
             return AWSCloud.computeSHA256Hash("{}");
         }
         else {
-            return AWSCloud.computeSHA256Hash(bodyText);
+            return AWSCloud.computeSHA256Hash(payload);
         }
     }
 

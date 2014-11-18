@@ -1,10 +1,6 @@
 package org.dasein.cloud.aws.platform.support;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException;
 import org.apache.log4j.Logger;
-import org.dasein.cloud.CloudErrorType;
 import org.dasein.cloud.CloudException;
 import org.dasein.cloud.InternalException;
 import org.dasein.cloud.aws.AWSCloud;
@@ -23,10 +19,7 @@ import org.dasein.util.JiteratorPopulator;
 import org.dasein.util.PopulatorThread;
 
 import javax.annotation.Nonnull;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
 
 /**
  * User: Eugene Yaroslavtsev
@@ -71,13 +64,7 @@ public class CaseSupport extends AbstractTicketService {
         APITrace.begin(provider, "Support.closeTicket");
         try {
             CaseSupportMethod method = new CaseSupportMethod(provider, CaseSupportTarget.RESOLVE_CASE);
-
-            try {
-                method.invoke(new ObjectMapper().writeValueAsString(CaseCloseOptions.getInstance(options)));
-            } catch( JsonProcessingException e ) {
-                logger.error(e);
-                throw new CloudException("Unable to process parameters" + e.getMessage());
-            }
+            method.invoke(CaseCloseOptions.getInstance(options), Map.class);
         } finally {
             APITrace.end();
         }
@@ -88,21 +75,7 @@ public class CaseSupport extends AbstractTicketService {
         APITrace.begin(provider, "Support.createTicket");
         try {
             CaseSupportMethod method = new CaseSupportMethod(provider, CaseSupportTarget.CREATE_CASE);
-            try {
-                String result = method.invoke(new ObjectMapper().writeValueAsString(CaseCreateOptions.getInstance(options)));
-                try {
-                    return new ObjectMapper().readValue(result, CaseCreateCaseResponse.class).getCaseId();
-                } catch( UnrecognizedPropertyException e ) {
-                    logger.error("Error parsing response from AWS: " + e.getMessage());
-                    throw new CloudException(CloudErrorType.COMMUNICATION, 500, null, e.getMessage());
-                }
-            } catch( JsonProcessingException e ) {
-                logger.error(e);
-                throw new CloudException("Unable to process parameters" + e.getMessage());
-            } catch( IOException e ) {
-                logger.error(e);
-                throw new CloudException(e);
-            }
+            return method.invoke(CaseCreateOptions.getInstance(options), CaseCreateCaseResponse.class).getCaseId();
         } finally {
             APITrace.end();
         }
@@ -152,16 +125,7 @@ public class CaseSupport extends AbstractTicketService {
         APITrace.begin(provider, "Support.getAttachment");
         try {
             CaseSupportMethod method = new CaseSupportMethod(provider, CaseSupportTarget.DESCRIBE_ATTACHMENT);
-            try {
-                String result = method.invoke(new ObjectMapper().writeValueAsString(CaseAttachmentsListOptions.getInstance(options)));
-                return new ObjectMapper().readValue(result, CaseAttachmentResponse.class).getAttachment().buildAttachmentData();
-            } catch( JsonProcessingException e ) {
-                logger.error(e);
-                throw new CloudException("Unable to process parameters" + e.getMessage());
-            } catch( IOException e ) {
-                logger.error(e);
-                throw new CloudException("Unable to process results" + e.getMessage());
-            }
+            return method.invoke(CaseAttachmentsListOptions.getInstance(options), CaseAttachmentResponse.class).getAttachment().buildAttachmentData();
         } finally {
             APITrace.end();
         }
@@ -178,9 +142,7 @@ public class CaseSupport extends AbstractTicketService {
             }
             List<TicketAttachment> result = new ArrayList<TicketAttachment>();
             for( TicketReply reply : ticket.getRecentReplies() ) {
-                for( TicketAttachment attachment : reply.getTicketAttachmentSet() ) {
-                    result.add(attachment);
-                }
+                Collections.addAll(result, reply.getTicketAttachmentSet());
             }
             return result;
         } finally {
@@ -193,18 +155,13 @@ public class CaseSupport extends AbstractTicketService {
         APITrace.begin(provider, "Support.listServices");
         try {
             CaseSupportMethod method = new CaseSupportMethod(provider, CaseSupportTarget.DESCRIBE_SERVICES);
-            try {
-                String result = method.invoke(new ObjectMapper().writeValueAsString(CaseListServicesOptions.getInstance(options)));
-                List<CaseServiceResponse> caseServiceResponses = new ObjectMapper().readValue(result, CaseListServicesResponse.class).getCaseServiceResponses();
-                List<TicketService> listResult = new ArrayList<TicketService>();
-                for( CaseServiceResponse caseServiceResponse : caseServiceResponses ) {
-                    listResult.add(caseServiceResponse.buildService());
-                }
-                return listResult;
-            } catch( IOException e ) {
-                logger.error(e);
-                throw new CloudException("Unable to process parameters" + e.getMessage());
+            List<CaseServiceResponse> caseServiceResponses =  method.invoke(CaseListServicesOptions.getInstance(options), CaseListServicesResponse.class)
+                    .getCaseServiceResponses();
+            List<TicketService> listResult = new ArrayList<TicketService>();
+            for( CaseServiceResponse caseServiceResponse : caseServiceResponses ) {
+                listResult.add(caseServiceResponse.buildService());
             }
+            return listResult;
         } finally {
             APITrace.end();
         }
@@ -215,16 +172,10 @@ public class CaseSupport extends AbstractTicketService {
         APITrace.begin(provider, "Support.createReply");
         try {
             CaseSupportMethod method = new CaseSupportMethod(provider, CaseSupportTarget.ADD_COMMUNICATION_TO_CASE);
-            try {
-                String result = method.invoke(new ObjectMapper().writeValueAsString(CaseCreateReplyOptions.getInstance(options)));
-                CaseCreateReplyResponse response = new ObjectMapper().readValue(result, CaseCreateReplyResponse.class);
-                if( !response.getResult().equalsIgnoreCase("true") ) {
-                    logger.error("Unable to create reply");
-                    throw new CloudException("Unable to create reply");
-                }
-            } catch( IOException e ) {
-                logger.error(e);
-                throw new CloudException("Unable to process parameters" + e.getMessage());
+            CaseCreateReplyResponse response = method.invoke(CaseCreateReplyOptions.getInstance(options), CaseCreateReplyResponse.class);
+            if( !response.getResult().equalsIgnoreCase("true") ) {
+                logger.error("Unable to create reply");
+                throw new CloudException("Unable to create reply");
             }
         } finally {
             APITrace.end();
@@ -236,21 +187,14 @@ public class CaseSupport extends AbstractTicketService {
         APITrace.begin(provider, "Support.createAttachments");
         try {
             CaseSupportMethod method = new CaseSupportMethod(provider, CaseSupportTarget.ADD_ATTACHMENTS_TO_SET);
-            try {
-                String attachmentSetResponse = method.invoke(new ObjectMapper().writeValueAsString(CaseCreateAttachmentsOptions.getInstance(options)));
-                String attachmentSetId = new ObjectMapper().readValue(attachmentSetResponse, CaseSetAttachmentResponse.class).getAttachmentSetId();
+            String attachmentSetId = method.invoke(CaseCreateAttachmentsOptions.getInstance(options), CaseSetAttachmentResponse.class).getAttachmentSetId();
+            TicketCreateReplyOptions createOptions = new TicketCreateReplyOptions();
+            createOptions.setCaseId(options.getTicketId());
+            createOptions.setAttachmentSetId(attachmentSetId);
+            createOptions.setCommunicationBody("attachment file(s)");
+            createReply(createOptions);
 
-                TicketCreateReplyOptions createOptions = new TicketCreateReplyOptions();
-                createOptions.setCaseId(options.getTicketId());
-                createOptions.setAttachmentSetId(attachmentSetId);
-                createOptions.setCommunicationBody("attachment file(s)");
-                createReply(createOptions);
-
-                return attachmentSetId;
-            } catch( IOException e ) {
-                logger.error(e);
-                throw new CloudException("Unable to process parameters" + e.getMessage());
-            }
+            return attachmentSetId;
         } finally {
             APITrace.end();
         }
@@ -267,27 +211,17 @@ public class CaseSupport extends AbstractTicketService {
     private Case getCase( CaseListOptions options ) throws InternalException, CloudException {
         CaseSupportMethod method = new CaseSupportMethod(provider, CaseSupportTarget.DESCRIBE_CASES);
 
-        try {
-            String result = method.invoke(new ObjectMapper().writeValueAsString(options));
-            CaseDetails caseDetails = new ObjectMapper().readValue(result, CaseDetails.class);
-            List<Case> cases = caseDetails.getCases();
-            if( cases == null ) {
-                throw new CloudException("Response did not include any cases");
-            }
-            else if( cases.size() != 1 ) {
-                throw new CloudException("Response include wrong amount of case [" + cases.size() + "]");
-            }
-            else {
-                return cases.get(0);
-            }
-        } catch( JsonProcessingException e ) {
-            logger.error(e);
-            throw new CloudException("Unable to process parameters" + e.getMessage());
-        } catch( IOException e ) {
-            logger.error(e);
-            throw new CloudException(e);
+        CaseDetails caseDetails = method.invoke(options, CaseDetails.class);
+        List<Case> cases = caseDetails.getCases();
+        if( cases == null ) {
+            throw new CloudException("Response did not include any cases");
         }
-
+        else if( cases.size() != 1 ) {
+            throw new CloudException("Response include wrong amount of case [" + cases.size() + "]");
+        }
+        else {
+            return cases.get(0);
+        }
     }
 
     /**
@@ -302,23 +236,14 @@ public class CaseSupport extends AbstractTicketService {
         APITrace.begin(provider, "Support.listReplies");
         try {
             CaseSupportMethod method = new CaseSupportMethod(provider, CaseSupportTarget.DESCRIBE_COMMUNICATIONS);
-            try {
-                String result = method.invoke(new ObjectMapper().writeValueAsString(options));
-                RecentCommunications recentCommunications = new ObjectMapper().readValue(result, RecentCommunications.class);
-                for( Communication communication : recentCommunications.getCommunications() ) {
-                    replyJiterator.push(communication.buildReply());
-                }
-                String nextToken = recentCommunications.getNextToken();
-                if( nextToken != null ) {
-                    options.setNextToken(nextToken);
-                    populateReplies(replyJiterator, options);
-                }
-            } catch( JsonProcessingException e ) {
-                logger.error(e);
-                throw new CloudException("Unable to process parameters" + e.getMessage());
-            } catch( IOException e ) {
-                logger.error(e);
-                throw new CloudException("Unable to process results" + e.getMessage());
+            RecentCommunications recentCommunications = method.invoke(options, RecentCommunications.class);
+            for( Communication communication : recentCommunications.getCommunications() ) {
+                replyJiterator.push(communication.buildReply());
+            }
+            String nextToken = recentCommunications.getNextToken();
+            if( nextToken != null ) {
+                options.setNextToken(nextToken);
+                populateReplies(replyJiterator, options);
             }
         } finally {
             APITrace.end();
@@ -338,29 +263,20 @@ public class CaseSupport extends AbstractTicketService {
         try {
             CaseSupportMethod method = new CaseSupportMethod(provider, CaseSupportTarget.DESCRIBE_CASES);
 
-            try {
-                String result = method.invoke(new ObjectMapper().writeValueAsString(options));
-                CaseDetails caseDetails = new ObjectMapper().readValue(result, CaseDetails.class);
-                for( Case caze : caseDetails.getCases() ) {
-                    Ticket ticket;
-                    if( isIncludeReplies != null && isIncludeReplies ) {
-                        ticket = fillTicketReplies(caze.buildTicket());
-                    }
-                    else {
-                        ticket = caze.buildTicket();
-                    }
-                    ticketJiterator.push(ticket);
+            CaseDetails caseDetails = method.invoke(options, CaseDetails.class);
+            for( Case caze : caseDetails.getCases() ) {
+                Ticket ticket;
+                if( isIncludeReplies != null && isIncludeReplies ) {
+                    ticket = fillTicketReplies(caze.buildTicket());
                 }
-                if( caseDetails.getNextToken() != null ) {
-                    options.setNextToken(caseDetails.getNextToken());
-                    populateTickets(ticketJiterator, options, isIncludeReplies);
+                else {
+                    ticket = caze.buildTicket();
                 }
-            } catch( JsonProcessingException e ) {
-                logger.error(e);
-                throw new CloudException("Unable to process parameters" + e.getMessage());
-            } catch( IOException e ) {
-                logger.error(e);
-                throw new CloudException(e);
+                ticketJiterator.push(ticket);
+            }
+            if( caseDetails.getNextToken() != null ) {
+                options.setNextToken(caseDetails.getNextToken());
+                populateTickets(ticketJiterator, options, isIncludeReplies);
             }
         } finally {
             APITrace.end();

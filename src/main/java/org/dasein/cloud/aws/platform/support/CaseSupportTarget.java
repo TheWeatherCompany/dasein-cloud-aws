@@ -13,7 +13,11 @@ public enum CaseSupportTarget {
     DESCRIBE_SERVICES("AWSSupport_20130415.DescribeServices"),
     ADD_COMMUNICATION_TO_CASE("AWSSupport_20130415.AddCommunicationToCase"),
     ADD_ATTACHMENTS_TO_SET("AWSSupport_20130415.AddAttachmentsToSet"),
-    DESCRIBE_COMMUNICATIONS("AWSSupport_20130415.DescribeCommunications"),;
+    DESCRIBE_COMMUNICATIONS("AWSSupport_20130415.DescribeCommunications"),
+    DESCRIBE_TRUSTED_ADVISOR_CHECKS("AWSSupport_20130415.DescribeTrustedAdvisorChecks"),
+    DESCRIBE_TRUSTED_ADVISOR_CHECK_RESULT("AWSSupport_20130415.DescribeTrustedAdvisorCheckResult")
+    ;
+
     private String target;
 
     CaseSupportTarget( String target ) {
