@@ -1141,19 +1141,29 @@ public class VPC extends AbstractVLANSupport {
     }
 
     @Override
-    public RoutingTable getRoutingTable(@Nonnull String id) throws CloudException, InternalException {
+    public RoutingTable getRoutingTable(@Nonnull RouteTableGetOptions options) throws CloudException, InternalException {
         APITrace.begin(provider, "VLAN.getRoutingTable");
         try {
             Map<String, String> parameters = provider.getStandardParameters(provider.getContext(), ELBMethod.DESCRIBE_ROUTE_TABLES);
             parameters.put("Filter.1.Name", "route-table-id");
-            parameters.put("Filter.1.Value.1", id);
-            return getRoutingTableAbstract(parameters);
+            parameters.put("Filter.1.Value.1", options.getRouteTableId());
+            return getRoutingTableAbstract(parameters, options.getRequiredStates());
         } finally {
             APITrace.end();
         }
     }
 
-    private RoutingTable getRoutingTableAbstract(@Nonnull Map<String, String> parameters) throws CloudException, InternalException {
+    @Override
+    public RoutingTable getRoutingTable(@Nonnull String id) throws CloudException, InternalException {
+        APITrace.begin(provider, "VLAN.getRoutingTable");
+        try {
+            return getRoutingTable(RouteTableGetOptions.getInstance(id));
+        } finally {
+            APITrace.end();
+        }
+    }
+
+    private RoutingTable getRoutingTableAbstract(@Nonnull Map<String, String> parameters, @Nonnull RouteState[] requiredStates) throws CloudException, InternalException {
         ProviderContext ctx = provider.getContext();
 
         if( ctx == null ) {
@@ -1183,7 +1193,7 @@ public class VPC extends AbstractVLANSupport {
                 Node item = items.item(j);
 
                 if( item.getNodeName().equalsIgnoreCase("item") && item.hasChildNodes() ) {
-                    RoutingTable t = toRoutingTable(ctx, item);
+                    RoutingTable t = toRoutingTable(ctx, item, requiredStates);
 
                     if( t != null ) {
                         return t;
@@ -1192,6 +1202,10 @@ public class VPC extends AbstractVLANSupport {
             }
         }
         return null;
+    }
+
+    private RoutingTable getRoutingTableAbstract( @Nonnull Map<String, String> parameters ) throws CloudException, InternalException {
+        return getRoutingTableAbstract(parameters, new RouteState[]{RouteState.ACTIVE});
     }
 
     @Override
@@ -2538,6 +2552,10 @@ public class VPC extends AbstractVLANSupport {
     }
 
     private @Nullable RoutingTable toRoutingTable(@Nonnull ProviderContext ctx, @Nullable Node node) throws CloudException, InternalException {
+        return toRoutingTable(ctx, node, new RouteState[]{RouteState.ACTIVE});
+    }
+
+    private @Nullable RoutingTable toRoutingTable(@Nonnull ProviderContext ctx, @Nullable Node node, @Nonnull  RouteState[] requiredStates) throws CloudException, InternalException {
         if( node == null ) {
             return null;
         }
@@ -2565,7 +2583,7 @@ public class VPC extends AbstractVLANSupport {
                     if( item.getNodeName().equalsIgnoreCase("item") && item.hasChildNodes() ) {
                         String destination = null, gateway = null, instanceId = null, ownerId = null, nicId = null;
                         NodeList attrs = item.getChildNodes();
-                        boolean active = false;
+                        boolean availStatus = false;
 
                         for( int k = 0; k < attrs.getLength(); k++ ) {
                             Node attr = attrs.item(k);
@@ -2581,10 +2599,20 @@ public class VPC extends AbstractVLANSupport {
                             } else if( attr.getNodeName().equalsIgnoreCase("networkInterfaceId") && attr.hasChildNodes() ) {
                                 nicId = attr.getFirstChild().getNodeValue().trim();
                             } else if( attr.getNodeName().equalsIgnoreCase("state") && attr.hasChildNodes() ) {
-                                active = attr.getFirstChild().getNodeValue().trim().equalsIgnoreCase("active");
+                                try {
+                                    RouteState rs = RouteState.fromValue(attr.getFirstChild().getNodeValue().trim().toUpperCase());
+                                    for( RouteState routeState : requiredStates ) {
+                                        if( routeState.equals(rs) ) {
+                                            availStatus = true;
+                                            break;
+                                        }
+                                    }
+                                } catch( IllegalArgumentException ignored ) {
+                                    //ignore it
+                                }
                             }
                         }
-                        if( active && destination != null ) {
+                        if( availStatus && destination != null ) {
                             if( gateway != null ) {
                                 routes.add(Route.getRouteToGateway(IPVersion.IPV4, destination, gateway));
                             }
