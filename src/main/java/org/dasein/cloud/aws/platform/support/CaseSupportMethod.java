@@ -26,12 +26,12 @@ import java.util.Map.Entry;
  */
 public class CaseSupportMethod {
 
-    private static final Logger logger = Logger.getLogger(CaseSupportMethod.class);
+    private static final Logger logger = AWSCloud.getLogger(CaseSupportMethod.class);
     private static final Logger wire = AWSCloud.getWireLogger(CaseSupportMethod.class);
     private static final String URL = "https://support.us-east-1.amazonaws.com";
     private static final String CONTENT_TYPE = "application/x-amz-json-1.1";
+    private static final String EMPTY_BODY = "";
     private static final String service = "support";
-    private static String bodyText = "{}";
     private AWSCloud provider;
     private CaseSupportTarget AMZ_TARGET;
 
@@ -41,7 +41,7 @@ public class CaseSupportMethod {
     }
 
     public String invoke() throws CloudException, InternalException {
-        return invoke(bodyText);
+        return invoke(EMPTY_BODY);
     }
 
     public String invoke( String request_parameters ) throws CloudException, InternalException {
@@ -63,24 +63,23 @@ public class CaseSupportMethod {
 
         HttpClient httpClient = null;
         try {
-            if( request_parameters != null ) {
-                bodyText = request_parameters;
+            if( request_parameters == null ) {
+                request_parameters = EMPTY_BODY;
             }
             httpClient = provider.getClient();
 
             Map<String, String> map = new HashMap<String, String>();
             map.put("Content-Type", CONTENT_TYPE);
-            String v4HeaderDate = provider.getV4HeaderDate(null);
-            map.put("X-Amz-Date", v4HeaderDate);
+            map.put("X-Amz-Date", provider.getV4HeaderDate(null));
             map.put("X-Amz-Target", AMZ_TARGET.getTarget());
-            HttpPost request = new HttpPost(URL);
+            map.put("host", new URI(URL).getHost());
 
+            HttpPost request = new HttpPost(URL);
             for( Entry<String, String> enumSet : map.entrySet() ) {
                 request.addHeader(enumSet.getKey(), enumSet.getValue());
             }
-            map.put("host", new URI(URL).getHost());
-            request.addHeader("Authorization", getAuthorizationHeader(map));
-            request.setEntity(getParameters());
+            request.addHeader("Authorization", getAuthorizationHeader(map,request_parameters ));
+            request.setEntity(getParameters(request_parameters));
 
             try {
                 HttpResponse response = httpClient.execute(request);
@@ -89,7 +88,11 @@ public class CaseSupportMethod {
                 if( status == HttpServletResponse.SC_OK ) {
                     return getContent(response.getEntity().getContent());
                 }
-                else if( status == HttpServletResponse.SC_SERVICE_UNAVAILABLE || status == HttpServletResponse.SC_INTERNAL_SERVER_ERROR ) {
+                else if( status == HttpServletResponse.SC_SERVICE_UNAVAILABLE ||
+                        status == HttpServletResponse.SC_INTERNAL_SERVER_ERROR
+                        ) {
+//                        ||
+//                        (status == HttpServletResponse.SC_BAD_REQUEST && isRejected(response))) {
 
                     if( attempts >= 5 ) {
                         String msg;
@@ -97,6 +100,9 @@ public class CaseSupportMethod {
                         if( status == HttpServletResponse.SC_SERVICE_UNAVAILABLE ) {
                             msg = "Cloud service is currently unavailable.";
                         }
+//                        else if(status == HttpServletResponse.SC_BAD_REQUEST) {
+//                            msg = "Calculated v4 signature authorization was rejected.";
+//                        }
                         else {
                             msg = "The cloud service encountered a server error while processing your request.";
                         }
@@ -111,7 +117,6 @@ public class CaseSupportMethod {
                         }
                         return invoke(request_parameters, ++attempts);
                     }
-
                 }
                 else {
                     String code = "0"; //todo
@@ -141,23 +146,32 @@ public class CaseSupportMethod {
         }
     }
 
-    private String getAuthorizationHeader( Map<String, String> paramsForHeader ) throws InternalException {
+    private static boolean isRejected(HttpResponse response) throws IOException {
+        try {
+            CaseErrorResponse caseErrorResponse = new ObjectMapper().readValue(getContent(response.getEntity().getContent()), CaseErrorResponse.class);
+            String message = caseErrorResponse.getMessage();
+            return message.toLowerCase().contains("does not match".toLowerCase());
+        } catch( CloudException e ) {
+            logger.error(e);
+            return true;
+        }
+    }
+
+    private String getAuthorizationHeader( Map<String, String> paramsForHeader, String request_parameters ) throws InternalException {
         final String accessId;
         final String secret;
         try {
-            accessId = new String(provider.getAccessKey(provider.getContext())[0], "utf-8");
-            secret = new String(provider.getAccessKey(provider.getContext())[1], "utf-8");
-        } catch( UnsupportedEncodingException e ) {
-            logger.error(e.getMessage());
+            accessId = new String(provider.getContext().getAccessPublic(), "utf-8");
+            secret = new String(provider.getContext().getAccessPrivate(), "utf-8");
+        } catch (UnsupportedEncodingException e) {
             throw new InternalException(e);
         }
 
-        return provider.getV4Authorization(accessId, secret, "POST", URL, service, paramsForHeader, getRequestBodyHash());
-
-
+        String post = provider.getV4Authorization(accessId, secret, "POST", URL, service, paramsForHeader, getRequestBodyHash(request_parameters));
+        return post;
     }
 
-    private static StringEntity getParameters() throws InternalException {
+    private static StringEntity getParameters(String bodyText) throws InternalException {
         try {
             return new StringEntity(bodyText);
         } catch( UnsupportedEncodingException e ) {
@@ -165,9 +179,9 @@ public class CaseSupportMethod {
         }
     }
 
-    private static String getRequestBodyHash() throws InternalException {
+    private static String getRequestBodyHash(String bodyText) throws InternalException {
         if( bodyText == null ) {
-            return AWSCloud.computeSHA256Hash("{}");
+            return AWSCloud.computeSHA256Hash(EMPTY_BODY);
         }
         else {
             return AWSCloud.computeSHA256Hash(bodyText);
