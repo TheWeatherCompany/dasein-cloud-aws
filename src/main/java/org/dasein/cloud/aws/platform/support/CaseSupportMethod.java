@@ -91,8 +91,6 @@ public class CaseSupportMethod {
                 else if( status == HttpServletResponse.SC_SERVICE_UNAVAILABLE ||
                         status == HttpServletResponse.SC_INTERNAL_SERVER_ERROR
                         ) {
-//                        ||
-//                        (status == HttpServletResponse.SC_BAD_REQUEST && isRejected(response))) {
 
                     if( attempts >= 5 ) {
                         String msg;
@@ -100,9 +98,6 @@ public class CaseSupportMethod {
                         if( status == HttpServletResponse.SC_SERVICE_UNAVAILABLE ) {
                             msg = "Cloud service is currently unavailable.";
                         }
-//                        else if(status == HttpServletResponse.SC_BAD_REQUEST) {
-//                            msg = "Calculated v4 signature authorization was rejected.";
-//                        }
                         else {
                             msg = "The cloud service encountered a server error while processing your request.";
                         }
@@ -146,17 +141,6 @@ public class CaseSupportMethod {
         }
     }
 
-    private static boolean isRejected(HttpResponse response) throws IOException {
-        try {
-            CaseErrorResponse caseErrorResponse = new ObjectMapper().readValue(getContent(response.getEntity().getContent()), CaseErrorResponse.class);
-            String message = caseErrorResponse.getMessage();
-            return message.toLowerCase().contains("does not match".toLowerCase());
-        } catch( CloudException e ) {
-            logger.error(e);
-            return true;
-        }
-    }
-
     private String getAuthorizationHeader( Map<String, String> paramsForHeader, String request_parameters ) throws InternalException {
         final String accessId;
         final String secret;
@@ -166,9 +150,7 @@ public class CaseSupportMethod {
         } catch (UnsupportedEncodingException e) {
             throw new InternalException(e);
         }
-
-        String post = provider.getV4Authorization(accessId, secret, "POST", URL, service, paramsForHeader, getRequestBodyHash(request_parameters));
-        return post;
+        return provider.getV4Authorization(accessId, secret, "POST", URL, service, paramsForHeader, getRequestBodyHash(request_parameters));
     }
 
     private static StringEntity getParameters(String bodyText) throws InternalException {
