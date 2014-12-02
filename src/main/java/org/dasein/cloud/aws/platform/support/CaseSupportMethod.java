@@ -150,7 +150,9 @@ public class CaseSupportMethod {
         } catch (UnsupportedEncodingException e) {
             throw new InternalException(e);
         }
-        return provider.getV4Authorization(accessId, secret, "POST", URL, service, paramsForHeader, getRequestBodyHash(request_parameters));
+        String requestBodyHash = getRequestBodyHash(request_parameters);
+        logger.debug("body hash=[" + requestBodyHash + "]" + "for body=[" + request_parameters + "]" + "for action=[" + AMZ_TARGET + "]");
+        return provider.getV4Authorization(accessId, secret, "POST", URL, service, paramsForHeader, requestBodyHash);
     }
 
     private static StringEntity getParameters(String bodyText) throws InternalException {
