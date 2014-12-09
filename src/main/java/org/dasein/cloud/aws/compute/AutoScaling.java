@@ -802,13 +802,12 @@ public class AutoScaling extends AbstractAutoScalingSupport {
 				}
 			}
 
-            blocks = doc.getElementsByTagName(AWSCloud.P_NEXT_TOKEN);
-			if( blocks != null && blocks.getLength() == 1 && blocks.item(0).hasChildNodes() ) {
-				String newNextToken = provider.getTextValue(blocks.item(0));
-				populateLaunchConfigurationStatus(iterator, newNextToken);
-			}
+            String newNextToken = getNextToken( doc );
+            if ( newNextToken != null ) {
+                populateLaunchConfigurationStatus( iterator, newNextToken );
+            }
 
-		}
+        }
 		finally {
 			APITrace.end();
 		}
@@ -867,7 +866,12 @@ public class AutoScaling extends AbstractAutoScalingSupport {
 				}
 			}
 
-		}
+            String newNextToken = getNextToken( doc );
+            if ( newNextToken != null ) {
+                populateLaunchConfiguration( iterator, newNextToken );
+            }
+
+        }
 		finally {
 			APITrace.end();
 		}
@@ -932,7 +936,12 @@ public class AutoScaling extends AbstractAutoScalingSupport {
 				}
 			}
 
-		}
+            String newNextToken = getNextToken( doc );
+            if ( newNextToken != null ) {
+                populateScalingGroupStatus( iterator, newNextToken );
+            }
+
+        }
 		finally {
 			APITrace.end();
 		}
@@ -1012,7 +1021,12 @@ public class AutoScaling extends AbstractAutoScalingSupport {
 				}
 			}
 
-		}
+            String newNextToken = getNextToken( doc );
+            if ( newNextToken != null ) {
+                populateScalingGroups( iterator, newNextToken, options );
+            }
+
+        }
 		finally {
 			APITrace.end();
 		}
@@ -1202,7 +1216,7 @@ public class AutoScaling extends AbstractAutoScalingSupport {
         return populatorThread.getResult();
     }
 
-    private void populateNotificationConfig(@Nonnull Jiterator<AutoScalingGroupNotificationConfig> asgNotificationConfig, @Nullable String token, String[] scalingGroupIds) throws CloudException, InternalException {
+    private void populateNotificationConfig(@Nonnull Jiterator<AutoScalingGroupNotificationConfig> iterator, @Nullable String token, String[] scalingGroupIds) throws CloudException, InternalException {
         APITrace.begin(provider, "AutoScaling.listNotificationConfigs");
         try {
 
@@ -1223,14 +1237,13 @@ public class AutoScaling extends AbstractAutoScalingSupport {
                 Node configNode = result.item(i);
                 if (configNode.getNodeName().equalsIgnoreCase("member")) {
                     AutoScalingGroupNotificationConfig nc = toASGNotificationConfig(configNode.getChildNodes());
-                    if (nc != null) asgNotificationConfig.push(nc);
+                    if (nc != null) iterator.push(nc);
                 }
             }
 
-            blocks = document.getElementsByTagName("NextToken");
-            if( blocks != null && blocks.getLength() == 1 && blocks.item(0).hasChildNodes() ) {
-                String nextToken = AWSCloud.getTextValue(blocks.item(0));
-                populateNotificationConfig(asgNotificationConfig, nextToken, scalingGroupIds);
+            String newNextToken = getNextToken( document );
+            if ( newNextToken != null ) {
+                populateNotificationConfig( iterator, newNextToken, scalingGroupIds );
             }
 
         } finally {
@@ -1872,6 +1885,14 @@ public class AutoScaling extends AbstractAutoScalingSupport {
         }
       }
       return sp;
+    }
+
+    private String getNextToken( @Nonnull Document doc ) {
+        NodeList blocks = doc.getElementsByTagName( AWSCloud.P_NEXT_TOKEN );
+        if ( blocks != null && blocks.getLength() == 1 && blocks.item( 0 ).hasChildNodes() ) {
+            return AWSCloud.getTextValue( blocks.item( 0 ) );
+        }
+        return null;
     }
 
 }
