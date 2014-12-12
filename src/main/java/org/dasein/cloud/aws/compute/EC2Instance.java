@@ -1804,13 +1804,30 @@ public class EC2Instance extends AbstractVMSupport<AWSCloud> {
         if( options != null && options.getRegex() != null ) {
             // still have to match on regex
             options = VMFilterOptions.getInstance(false, options.getRegex());
-        }
-        else {
+        } else {
             // nothing else to match on
-            options = null;
+            options = options.getSubnetId() != null ? options : null;
         }
 
         return listVirtualMachinesWithParams(filterParameters, options);
+    }
+
+    private Future<Iterable<IpAddress>> getIPAddresses() throws InternalException, CloudException {
+        Future<Iterable<IpAddress>> ipPoolFuture = null;
+        if( getProvider().hasNetworkServices() ) {
+            NetworkServices services = getProvider().getNetworkServices();
+
+            if( services != null ) {
+                if( services.hasIpAddressSupport() ) {
+                    IpAddressSupport support = services.getIpAddressSupport();
+
+                    if( support != null ) {
+                        ipPoolFuture = support.listIpPoolConcurrently(IPVersion.IPV4, false);
+                    }
+                }
+            }
+        }
+        return ipPoolFuture;
     }
 
     private Map<String, String> createFilterParametersFrom( @Nullable VMFilterOptions options ) {
@@ -1837,6 +1854,12 @@ public class EC2Instance extends AbstractVMSupport<AWSCloud> {
         if( options.getSpotRequestId() != null ) {
             AWSCloud.addFilterParameters(extraParameters, filterIndex++, "spot-instance-request-id", Arrays.asList(options.getSpotRequestId()));
         }
+        if (options.getSubnetId() != null) {
+            extraParameters.put("Filter." + filterIndex + ".Name", "subnet-id");
+            extraParameters.put("Filter." + filterIndex + ".Value.1", options.getSubnetId());
+            filterIndex++;
+        }
+
         return extraParameters;
     }
 
@@ -1845,9 +1868,8 @@ public class EC2Instance extends AbstractVMSupport<AWSCloud> {
         try {
             ProviderContext ctx = getProvider().getContext();
 
-            if( ctx == null ) {
-                throw new CloudException("No context was established for this request");
-            }
+            EC2Filter filter = EC2Filter.withParams(createFilterParametersFrom(options));
+            Document doc = getEc2Gateway().invoke(EC2Method.DESCRIBE_INSTANCES, filter);
 
             Future<Iterable<IpAddress>> ipPoolFuture = null;
             Iterable<IpAddress> addresses;
@@ -1871,16 +1893,7 @@ public class EC2Instance extends AbstractVMSupport<AWSCloud> {
 
             EC2Method method = new EC2Method(getProvider(), getProvider().getEc2Url(), parameters);
             ArrayList<VirtualMachine> list = new ArrayList<VirtualMachine>();
-            NodeList blocks;
-            Document doc;
-
-            try {
-                doc = method.invoke();
-            } catch( EC2Exception e ) {
-                logger.error(e.getSummary());
-                throw new CloudException(e);
-            }
-            blocks = doc.getElementsByTagName("instancesSet");
+            NodeList blocks = doc.getElementsByTagName("instancesSet");
             for( int i = 0; i < blocks.getLength(); i++ ) {
                 NodeList instances = blocks.item(i).getChildNodes();
 
@@ -1888,7 +1901,6 @@ public class EC2Instance extends AbstractVMSupport<AWSCloud> {
                     Node instance = instances.item(j);
 
                     if( instance.getNodeName().equals("item") ) {
-
                         try {
                             if( ipPoolFuture != null ) {
                                 addresses = ipPoolFuture.get(30, TimeUnit.SECONDS);
@@ -1907,7 +1919,7 @@ public class EC2Instance extends AbstractVMSupport<AWSCloud> {
                             addresses = Collections.emptyList();
                         }
 
-                        VirtualMachine vm = toVirtualMachine(ctx, instance, addresses);
+                        VirtualMachine vm = toVirtualMachine(getContext(), instance, addresses);
 
                         if( options == null || options.matches(vm) ) {
                             list.add(vm);
@@ -3179,4 +3191,7 @@ public class EC2Instance extends AbstractVMSupport<AWSCloud> {
         return SpotVirtualMachineRequest.getInstance(requestId, price, type, amiId, productId, createdTs, validFromTs, validUntilTs, fulfillmentTs, fulfillmentDcid, launchGroup);
     }
 
+    protected EC2Gateway getEc2Gateway() {
+        return new EC2Gateway(getProvider());
+    }
 }
