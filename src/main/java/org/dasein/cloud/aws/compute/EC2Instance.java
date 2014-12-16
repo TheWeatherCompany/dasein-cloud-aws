@@ -1868,7 +1868,7 @@ public class EC2Instance extends AbstractVMSupport<AWSCloud> {
         try {
             ProviderContext ctx = getProvider().getContext();
 
-            EC2Filter filter = EC2Filter.withParams(createFilterParametersFrom(options));
+            EC2Filter filter = EC2Filter.withParams(createFilterParametersFrom(options)).addParams(extraParameters);
             Document doc = getEc2Gateway().invoke(EC2Method.DESCRIBE_INSTANCES, filter);
 
             Future<Iterable<IpAddress>> ipPoolFuture = null;
@@ -1887,11 +1887,6 @@ public class EC2Instance extends AbstractVMSupport<AWSCloud> {
                 }
             }
 
-            Map<String, String> parameters = getProvider().getStandardParameters(getProvider().getContext(), EC2Method.DESCRIBE_INSTANCES);
-
-            AWSCloud.addExtraParameters(parameters, extraParameters);
-
-            EC2Method method = new EC2Method(getProvider(), getProvider().getEc2Url(), parameters);
             ArrayList<VirtualMachine> list = new ArrayList<VirtualMachine>();
             NodeList blocks = doc.getElementsByTagName("instancesSet");
             for( int i = 0; i < blocks.getLength(); i++ ) {
