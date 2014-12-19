@@ -1523,18 +1523,22 @@ public class EC2Instance extends AbstractVMSupport<AWSCloud> {
                 if( a.existingVolumeId == null ) {
                     parameters.put("BlockDeviceMapping." + i + ".DeviceName", a.deviceId);
 
-                    VolumeProduct prd = getProvider().getComputeServices().getVolumeSupport().getVolumeProduct(a.volumeToCreate.getVolumeProductId());
-                    parameters.put("BlockDeviceMapping." + i + ".Ebs.VolumeType", prd.getProviderProductId());
+                    if (a.volumeToCreate.getVolumeProductId() != null && a.volumeToCreate.getVolumeProductId().equalsIgnoreCase(EBSVolume.VOLUME_PRODUCT_EPHEMERAL)) {
+                        int index = i - 1;
+                        parameters.put("BlockDeviceMapping." + i + ".VirtualName", EBSVolume.VOLUME_PRODUCT_EPHEMERAL + index);
+                    } else {
+                        VolumeProduct prd = getProvider().getComputeServices().getVolumeSupport().getVolumeProduct(a.volumeToCreate.getVolumeProductId());
+                        parameters.put("BlockDeviceMapping." + i + ".Ebs.VolumeType", prd.getProviderProductId());
 
-                    if( a.volumeToCreate.getIops() > 0 ) {
-                        parameters.put("BlockDeviceMapping." + i + ".Ebs.Iops", String.valueOf(a.volumeToCreate.getIops()));
-                    }
+                        if (a.volumeToCreate.getIops() > 0) {
+                            parameters.put("BlockDeviceMapping." + i + ".Ebs.Iops", String.valueOf(a.volumeToCreate.getIops()));
+                        }
 
-                    if( a.volumeToCreate.getSnapshotId() != null ) {
-                        parameters.put("BlockDeviceMapping." + i + ".Ebs.SnapshotId", a.volumeToCreate.getSnapshotId());
-                    }
-                    else {
-                        parameters.put("BlockDeviceMapping." + i + ".Ebs.VolumeSize", String.valueOf(a.volumeToCreate.getVolumeSize().getQuantity().intValue()));
+                        if (a.volumeToCreate.getSnapshotId() != null) {
+                            parameters.put("BlockDeviceMapping." + i + ".Ebs.SnapshotId", a.volumeToCreate.getSnapshotId());
+                        } else {
+                            parameters.put("BlockDeviceMapping." + i + ".Ebs.VolumeSize", String.valueOf(a.volumeToCreate.getVolumeSize().getQuantity().intValue()));
+                        }
                     }
                     i++;
                 }
@@ -1800,13 +1804,30 @@ public class EC2Instance extends AbstractVMSupport<AWSCloud> {
         if( options != null && options.getRegex() != null ) {
             // still have to match on regex
             options = VMFilterOptions.getInstance(false, options.getRegex());
-        }
-        else {
+        } else {
             // nothing else to match on
-            options = null;
+            options = options.getSubnetId() != null ? options : null;
         }
 
         return listVirtualMachinesWithParams(filterParameters, options);
+    }
+
+    private Future<Iterable<IpAddress>> getIPAddresses() throws InternalException, CloudException {
+        Future<Iterable<IpAddress>> ipPoolFuture = null;
+        if( getProvider().hasNetworkServices() ) {
+            NetworkServices services = getProvider().getNetworkServices();
+
+            if( services != null ) {
+                if( services.hasIpAddressSupport() ) {
+                    IpAddressSupport support = services.getIpAddressSupport();
+
+                    if( support != null ) {
+                        ipPoolFuture = support.listIpPoolConcurrently(IPVersion.IPV4, false);
+                    }
+                }
+            }
+        }
+        return ipPoolFuture;
     }
 
     private Map<String, String> createFilterParametersFrom( @Nullable VMFilterOptions options ) {
@@ -1833,6 +1854,12 @@ public class EC2Instance extends AbstractVMSupport<AWSCloud> {
         if( options.getSpotRequestId() != null ) {
             AWSCloud.addFilterParameters(extraParameters, filterIndex++, "spot-instance-request-id", Arrays.asList(options.getSpotRequestId()));
         }
+        if (options.getSubnetId() != null) {
+            extraParameters.put("Filter." + filterIndex + ".Name", "subnet-id");
+            extraParameters.put("Filter." + filterIndex + ".Value.1", options.getSubnetId());
+            filterIndex++;
+        }
+
         return extraParameters;
     }
 
@@ -1841,9 +1868,8 @@ public class EC2Instance extends AbstractVMSupport<AWSCloud> {
         try {
             ProviderContext ctx = getProvider().getContext();
 
-            if( ctx == null ) {
-                throw new CloudException("No context was established for this request");
-            }
+            EC2Filter filter = EC2Filter.withParams(createFilterParametersFrom(options)).addParams(extraParameters);
+            Document doc = getEc2Gateway().invoke(EC2Method.DESCRIBE_INSTANCES, filter);
 
             Future<Iterable<IpAddress>> ipPoolFuture = null;
             Iterable<IpAddress> addresses;
@@ -1861,22 +1887,8 @@ public class EC2Instance extends AbstractVMSupport<AWSCloud> {
                 }
             }
 
-            Map<String, String> parameters = getProvider().getStandardParameters(getProvider().getContext(), EC2Method.DESCRIBE_INSTANCES);
-
-            AWSCloud.addExtraParameters(parameters, extraParameters);
-
-            EC2Method method = new EC2Method(getProvider(), getProvider().getEc2Url(), parameters);
             ArrayList<VirtualMachine> list = new ArrayList<VirtualMachine>();
-            NodeList blocks;
-            Document doc;
-
-            try {
-                doc = method.invoke();
-            } catch( EC2Exception e ) {
-                logger.error(e.getSummary());
-                throw new CloudException(e);
-            }
-            blocks = doc.getElementsByTagName("instancesSet");
+            NodeList blocks = doc.getElementsByTagName("instancesSet");
             for( int i = 0; i < blocks.getLength(); i++ ) {
                 NodeList instances = blocks.item(i).getChildNodes();
 
@@ -1884,7 +1896,6 @@ public class EC2Instance extends AbstractVMSupport<AWSCloud> {
                     Node instance = instances.item(j);
 
                     if( instance.getNodeName().equals("item") ) {
-
                         try {
                             if( ipPoolFuture != null ) {
                                 addresses = ipPoolFuture.get(30, TimeUnit.SECONDS);
@@ -1903,7 +1914,7 @@ public class EC2Instance extends AbstractVMSupport<AWSCloud> {
                             addresses = Collections.emptyList();
                         }
 
-                        VirtualMachine vm = toVirtualMachine(ctx, instance, addresses);
+                        VirtualMachine vm = toVirtualMachine(getContext(), instance, addresses);
 
                         if( options == null || options.matches(vm) ) {
                             list.add(vm);
@@ -2276,6 +2287,7 @@ public class EC2Instance extends AbstractVMSupport<AWSCloud> {
             }
             else if( name.equals("networkInterfaceSet") ) {
                 ArrayList<String> networkInterfaceIds = new ArrayList<String>();
+                ArrayList<ProviderNetworkInterface> providerNetworkInterfaces = new ArrayList<ProviderNetworkInterface>();
                 if( attr.hasChildNodes() ) {
                     NodeList items = attr.getChildNodes();
                     for( int j = 0; j < items.getLength(); j++ ) {
@@ -2284,24 +2296,46 @@ public class EC2Instance extends AbstractVMSupport<AWSCloud> {
                         if( item.getNodeName().equals("item") && item.hasChildNodes() ) {
                             NodeList parts = item.getChildNodes();
                             String networkInterfaceId = null;
+                            ProviderNetworkInterface providerNetworkInterface = new ProviderNetworkInterface();
 
                             for( int k = 0; k < parts.getLength(); k++ ) {
                                 Node part = parts.item(k);
+                                String nodeName = part.getNodeName();
 
-                                if( part.getNodeName().equalsIgnoreCase("networkInterfaceId") ) {
+                                if( "networkInterfaceId".equalsIgnoreCase(nodeName) ) {
                                     if( part.hasChildNodes() ) {
                                         networkInterfaceId = part.getFirstChild().getNodeValue().trim();
+                                        providerNetworkInterface.setNetworkInterfaceId(networkInterfaceId);
+                                    }
+                                }
+                                else if( "privateIpAddressesSet".equalsIgnoreCase(nodeName) ) {
+                                    if( part.hasChildNodes() ) {
+                                        NodeList set = part.getChildNodes();
+                                        ArrayList<AssociationIpAddress> associationIpAddresses = new ArrayList<AssociationIpAddress>();
+
+                                        for( int h = 0; h < set.getLength(); h++ ) {
+                                            Node assoc = set.item(h);
+
+                                            if( assoc.getNodeName().equalsIgnoreCase("item") && assoc.hasChildNodes() ) {
+                                                AssociationIpAddress associationIpAddress = toPrivateIpAddressSet(assoc);
+                                                if( associationIpAddress != null )
+                                                    associationIpAddresses.add(associationIpAddress);
+                                            }
+                                        }
+                                        providerNetworkInterface.setAssociationIpAddresses(associationIpAddresses.toArray(new AssociationIpAddress[associationIpAddresses.size()]));
                                     }
                                 }
                             }
                             if( networkInterfaceId != null ) {
                                 networkInterfaceIds.add(networkInterfaceId);
+                                providerNetworkInterfaces.add(providerNetworkInterface);
                             }
                         }
                     }
                 }
                 if( networkInterfaceIds.size() > 0 ) {
                     server.setProviderNetworkInterfaceIds(networkInterfaceIds.toArray(new String[networkInterfaceIds.size()]));
+                    server.setProviderNetworkInterfaces(providerNetworkInterfaces.toArray(new ProviderNetworkInterface[providerNetworkInterfaces.size()]));
                 }
         /*
           [FIXME?] TODO: Really networkInterfaceSet needs to be own type/resource
@@ -2511,6 +2545,52 @@ public class EC2Instance extends AbstractVMSupport<AWSCloud> {
         return server;
     }
 
+    public AssociationIpAddress toPrivateIpAddressSet(Node part) {
+        NodeList privateIpAddresses = part.getChildNodes();
+
+        String privateIp = null;
+        String publicIp = null;
+        String publicDnsName = null;
+        Boolean primary = null;
+
+        for( int h = 0; h < privateIpAddresses.getLength(); h++ ) {
+            Node privateIpAddress = privateIpAddresses.item(h);
+            String privateIpAddressNodeName = privateIpAddress.getNodeName();
+
+            if( "privateIpAddress".equalsIgnoreCase(privateIpAddressNodeName) ) {
+                privateIp = privateIpAddress.getFirstChild().getNodeValue().trim();
+            }
+            else if( "primary".equalsIgnoreCase(privateIpAddressNodeName) ) {
+                primary = Boolean.valueOf(privateIpAddress.getFirstChild().getNodeValue().trim());
+            }
+            else if( "publicDnsName".equalsIgnoreCase(privateIpAddressNodeName)) {
+                publicDnsName = privateIpAddress.getFirstChild().getNodeValue().trim();
+            }
+            else if( "association".equalsIgnoreCase(privateIpAddressNodeName) && privateIpAddress.hasChildNodes() ) {
+                NodeList assoc = privateIpAddress.getChildNodes();
+
+                for( int m = 0; m < assoc.getLength(); m++ ) {
+                    Node assocProp = assoc.item(m);
+                    String assocPropName = assocProp.getNodeName();
+
+                    if( "publicIp".equalsIgnoreCase(assocPropName) ) {
+                        publicIp = assocProp.getFirstChild().getNodeValue().trim();
+                    }
+                }
+            }
+        }
+
+        if( privateIp != null || publicIp != null || primary != null || publicDnsName !=null ) {
+            AssociationIpAddress address = new AssociationIpAddress();
+            address.setPrimary(primary);
+            address.setPublicDnsName(publicDnsName);
+            if( privateIp != null ) address.setPrivateIpAddress(new RawAddress(privateIp));
+            if( publicIp != null ) address.setPublicIpAddress(new RawAddress(publicIp));
+            return address;
+        }
+        return null;
+    }
+
     @Override
     public void disableAnalytics( @Nonnull String instanceId ) throws InternalException, CloudException {
         APITrace.begin(getProvider(), "disableVMAnalytics");
@@ -2612,24 +2692,6 @@ public class EC2Instance extends AbstractVMSupport<AWSCloud> {
     @Override
     public void updateTags( @Nonnull String[] vmIds, @Nonnull Tag... tags ) throws CloudException, InternalException {
         getProvider().createTags(vmIds, tags);
-    }
-
-    @Override
-    public void updateTags(@Nonnull String[] vmIds, boolean asynchronous, @Nonnull Tag... tags) throws CloudException, InternalException {
-        if(asynchronous) {
-            getProvider().createTags(vmIds, tags);
-        } else {
-            getProvider().createTagsSynchronously(vmIds, tags);
-        }
-    }
-
-    @Override
-    public void updateTags(@Nonnull String vmId, boolean asynchronous, @Nonnull Tag... tags) throws CloudException, InternalException {
-        if(asynchronous) {
-            getProvider().createTags(vmId, tags);
-        } else {
-            getProvider().createTagsSynchronously(vmId, tags);
-        }
     }
 
     @Override
@@ -3124,4 +3186,7 @@ public class EC2Instance extends AbstractVMSupport<AWSCloud> {
         return SpotVirtualMachineRequest.getInstance(requestId, price, type, amiId, productId, createdTs, validFromTs, validUntilTs, fulfillmentTs, fulfillmentDcid, launchGroup);
     }
 
+    protected EC2Gateway getEc2Gateway() {
+        return new EC2Gateway(getProvider());
+    }
 }

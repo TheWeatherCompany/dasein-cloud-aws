@@ -110,6 +110,7 @@ public class AWSCloud extends AbstractCloud {
     static public final String P_SIGNATURE_VERSION = "SignatureVersion";
     static public final String P_TIMESTAMP = "Timestamp";
     static public final String P_VERSION = "Version";
+    static public final String P_NEXT_TOKEN = "NextToken";
 
     static public final String CLOUD_FRONT_ALGORITHM = "HmacSHA1";
     static public final String EC2_ALGORITHM = "HmacSHA256";
@@ -262,21 +263,7 @@ public class AWSCloud extends AbstractCloud {
     }
 
     public boolean createTags( final String[] resourceIds, final Tag... keyValuePairs ) {
-        hold();
-
-        Thread t = new Thread() {
-            public void run() {
-                try {
-                    createTags(1, resourceIds, keyValuePairs);
-                } finally {
-                    release();
-                }
-            }
-        };
-
-        t.setName("Tag Setter");
-        t.setDaemon(true);
-        t.start();
+        createTags(1, resourceIds, keyValuePairs);
         return true;
     }
 
@@ -329,29 +316,6 @@ public class AWSCloud extends AbstractCloud {
             }
         }
         return tagParameters;
-    }
-
-    public void createTagsSynchronously(final String resourceId, final Tag... keyValuePairs) throws CloudException, InternalException {
-        createTagsSynchronously(new String[]{resourceId}, keyValuePairs);
-    }
-
-    public void createTagsSynchronously(final String[] resourceIds, final Tag... keyValuePairs) throws CloudException, InternalException {
-        APITrace.begin(this, "Cloud.createTagsSynchronously");
-        try {
-            Map<String, String> parameters = getStandardParameters(getContext(), "CreateTags");
-            addIndexedParameters(parameters, "ResourceId.", resourceIds);
-
-            Map<String, String> tagParameters = getTagsFromKeyValuePairs(keyValuePairs);
-            if (tagParameters.size() == 0) {
-                return;
-            }
-            addExtraParameters(parameters, tagParameters);
-
-            new EC2Method(this, getEc2Url(), parameters).invoke();
-
-        } finally {
-            APITrace.end();
-        }
     }
 
     public boolean removeTags( String resourceId, Tag... keyValuePairs ) {

@@ -7,33 +7,33 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-@JsonInclude( JsonInclude.Include.NON_NULL )
-@JsonPropertyOrder( {"cases", "nextToken"} )
+@JsonInclude(JsonInclude.Include.NON_NULL)
+@JsonPropertyOrder({"cases", "nextToken"})
 public class CaseDetails {
 
-    @JsonProperty( "cases" )
+    @JsonProperty("cases")
     private List<Case> cases = new ArrayList<Case>();
-    @JsonProperty( value = "nextToken" )
+    @JsonProperty(value = "nextToken")
     String nextToken;
     @JsonIgnore
     private Map<String, Object> additionalProperties = new HashMap<String, Object>();
 
-    @JsonProperty( "cases" )
+    @JsonProperty("cases")
     public List<Case> getCases() {
         return cases;
     }
 
-    @JsonProperty( "cases" )
+    @JsonProperty("cases")
     public void setCases( List<Case> cases ) {
         this.cases = cases;
     }
 
-    @JsonProperty( value = "nextToken" )
+    @JsonProperty(value = "nextToken")
     public String getNextToken() {
         return nextToken;
     }
 
-    @JsonProperty( value = "nextToken" )
+    @JsonProperty(value = "nextToken")
     public void setNextToken( String nextToken ) {
         this.nextToken = nextToken;
     }

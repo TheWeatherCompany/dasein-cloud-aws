@@ -9,13 +9,13 @@ import java.util.Map;
  * @author Eugene Yaroslavtsev
  * @since 14.08.2014
  */
-@JsonInclude( JsonInclude.Include.NON_NULL )
-@JsonPropertyOrder( {"attachmentId", "fileName"} )
+@JsonInclude(JsonInclude.Include.NON_NULL)
+@JsonPropertyOrder({"attachmentId", "fileName"})
 public class Attachment {
 
-    @JsonProperty( "attachmentId" )
+    @JsonProperty("attachmentId")
     private String attachmentId;
-    @JsonProperty( "fileName" )
+    @JsonProperty("fileName")
     private String fileName;
     @JsonIgnore
     private Map<String, Object> additionalProperties = new HashMap<String, Object>();
@@ -28,22 +28,22 @@ public class Attachment {
         return attachment;
     }
 
-    @JsonProperty( "attachmentId" )
+    @JsonProperty("attachmentId")
     public String getAttachmentId() {
         return attachmentId;
     }
 
-    @JsonProperty( "attachmentId" )
+    @JsonProperty("attachmentId")
     public void setAttachmentId( String attachmentId ) {
         this.attachmentId = attachmentId;
     }
 
-    @JsonProperty( "fileName" )
+    @JsonProperty("fileName")
     public String getFileName() {
         return fileName;
     }
 
-    @JsonProperty( "fileName" )
+    @JsonProperty("fileName")
     public void setFileName( String fileName ) {
         this.fileName = fileName;
     }
