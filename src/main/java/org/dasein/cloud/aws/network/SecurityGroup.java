@@ -675,7 +675,7 @@ public class SecurityGroup extends AbstractFirewallSupport {
 
     @Override
     public void updateTags(@Nonnull String firewallId, @Nonnull Tag... tags) throws CloudException, InternalException {
-        removeTags(new String[]{firewallId}, tags);
+        updateTags(new String[]{firewallId}, tags);
     }
 
     @Override

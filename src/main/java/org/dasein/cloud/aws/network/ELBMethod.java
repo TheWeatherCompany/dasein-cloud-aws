@@ -50,6 +50,9 @@ public class ELBMethod extends EC2Method {
     static public final String APPLY_SECURITY_GROUPS_TO_LOAD_BALANCER = "ApplySecurityGroupsToLoadBalancer";
     static public final String MODIFY_LOADBALANCER_ATTRIBUTES         = "ModifyLoadBalancerAttributes";
     static public final String DESCRIBE_LOADBALANCER_ATTRIBUTES         = "DescribeLoadBalancerAttributes";
+    static public final String ADD_TAGS                   = "AddTags";
+    static public final String DESCRIBE_TAGS              = "DescribeTags";
+    static public final String REMOVE_TAGS                = "RemoveTags";
 
     static public @Nonnull ServiceAction[] asELBServiceAction(@Nonnull String action) {
         if( action.equals(CREATE_LOAD_BALANCER) ) {
